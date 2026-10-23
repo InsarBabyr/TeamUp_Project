@@ -1,1 +1,13 @@
+# dependencies
 node_modules/
+
+# database dumps, schemas and seed files (they can contain test credentials)
+*.sql
+
+# secrets and local settings
+.env
+.env.*
+
+# system files
+.DS_Store
+Thumbs.db
