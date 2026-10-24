@@ -1,7 +1,17 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8">
+<script>
+// Phones go to the mobile version; add ?desktop to the address to stay on this page
+(function(){
+  try{
+    var phone=/Android.+Mobile|iPhone|iPod|Windows Phone/i.test(navigator.userAgent)||(window.matchMedia&&matchMedia('(max-width: 600px)').matches);
+    if(phone&&!/[?&]desktop\b/.test(location.search)) location.replace('mobile.html'+location.search+location.hash);
+  }catch(e){}
+})();
+</script>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>TeamUp: find your team at any university</title>
+<title>TeamUp: find your team at AITU</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
 <link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&family=Unbounded:wght@600;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
