@@ -343,14 +343,10 @@ const A={
             try{if(!/^https?:$/.test(new URL(l).protocol)) throw 0}catch(e){return toast('That link looks invalid')}
         }
         if(!tok('send')) return;
-        const u=S.me.uid, sid=SKID[R.skill];
+        const sid=SKID[R.skill];
         if(!sid) return toast('Unknown skill');
-        let r=await sb.from('user_skills').upsert({user_id:u,skill_id:sid,level:LVDB[R.level],link_url:l||null,evidence_note:d},{onConflict:'user_id,skill_id'});
-        if(r.error) return dberr(r.error);
-        r=await sb.from('contacts').upsert({user_id:u,telegram:tg});
-        if(r.error) return dberr(r.error);
-        await sb.from('profiles').update({availability:AVDB[R.when]}).eq('id',u);
-        r=await sb.from('applications').insert({project_id:p.id,candidate_id:u,note:d});
+        // one transaction: skill, contact, availability and the application are saved together or not at all
+        const r=await sb.rpc('apply_to_project',{p_project_id:p.id,p_skill_id:sid,p_level:LVDB[R.level],p_link:l||null,p_note:d,p_telegram:tg,p_availability:AVDB[R.when]});
         if(r.error) return dberr(r.error);
         S.me.tg=tg; S.me.avail=R.when;
         const k=S.me.skills.find(x=>x.s===R.skill);

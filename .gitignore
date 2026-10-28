@@ -11,3 +11,6 @@ node_modules/
 # system files
 .DS_Store
 Thumbs.db
+
+# ...but keep schema migrations, they hold no data
+!supabase/migrations/*.sql
