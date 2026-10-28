@@ -45,6 +45,7 @@ document.body.insertAdjacentHTML('beforeend', `
       <input id="authPassword2" class="fld" type="password" maxlength="72" autocomplete="new-password" placeholder="••••••••">
     </div>
     <button id="forgotLink" class="lnk" data-a="setAuth" data-m="forgot">Forgot password?</button>
+    <button id="resendLink" class="lnk" data-a="resendCode" style="display:none;">Send the code again</button>
     <button id="backLink" class="lnk" data-a="setAuth" data-m="login" style="display:none;">← Back to sign in</button>
     <button class="btn" data-a="submitAuth" id="authBtn" data-mode="login" style="margin-top:8px;">Log In</button>
   </div>
@@ -93,7 +94,7 @@ function toast(m){
     tm=setTimeout(()=>t.classList.remove('sh'),2800);
 }
 
-const BK={rst:[3,1/60],send:[3,1/20],pub:[2,1/30],st:[10,1/2],cl:[10,1/2]};
+const BK={rst:[3,1/60],cf:[3,1/60],send:[3,1/20],pub:[2,1/30],st:[10,1/2],cl:[10,1/2]};
 function tok(n){
     const[c,r]=BK[n];
     let b={};
@@ -330,25 +331,36 @@ const A={
     openAuth:()=>{ $('#authModal').classList.add('visible'); A.setAuth({m:'login'}); setTimeout(()=>$('#authEmail').focus(),50); },
     closeAuth:()=>{ $('#authModal').classList.remove('visible'); $('#authPassword').value=''; $('#authPassword2').value=''; $('#authCode').value=''; G.pw=''; RCV=false; },
     setAuth:d=>{
-        const m = d.m, isReg = m === 'register', isRec = m === 'forgot' || m === 'reset', show = (id, on) => { $(id).style.display = on ? '' : 'none'; };
+        const m = d.m, isReg = m === 'register', isRec = m === 'forgot' || m === 'reset' || m === 'confirm', show = (id, on) => { $(id).style.display = on ? '' : 'none'; };
         show('#authTabs', !isRec);
         show('#regFields', isReg);
         show('#authHint', isRec);
-        show('#codeFields', m === 'reset');
-        show('#pwFields', m !== 'forgot');
+        show('#codeFields', m === 'reset' || m === 'confirm');
+        show('#pwFields', m !== 'forgot' && m !== 'confirm');
         show('#pw2Fields', m === 'reset');
         show('#forgotLink', m === 'login');
+        show('#resendLink', m === 'confirm');
         show('#backLink', isRec);
         $('#tabLogin').classList.toggle('active', !isReg);
         $('#tabRegister').classList.toggle('active', isReg);
-        $('#authModalTitle').textContent = {register:'Register', forgot:'Reset password', reset:'Set a new password'}[m] || 'Sign In';
-        $('#authHint').textContent = m === 'forgot' ? 'Enter your university email. We will send you a code to reset your password.' : 'If this email is registered, we sent a code to it. It can take a few minutes, check the Junk folder too.';
+        $('#authModalTitle').textContent = {register:'Register', forgot:'Reset password', reset:'Set a new password', confirm:'Confirm your email'}[m] || 'Sign In';
+        $('#authHint').textContent = m === 'forgot' ? 'Enter your university email. We will send you a code to reset your password.'
+            : m === 'confirm' ? 'We sent a code to your university email. Enter it to finish. It can take a few minutes, check the Junk folder too.'
+            : 'If this email is registered, we sent a code to it. It can take a few minutes, check the Junk folder too.';
         $('#authPwLbl').textContent = m === 'reset' ? 'New password' : 'Password';
         const b = $('#authBtn');
-        b.textContent = {register:'Create Account', forgot:'Send code', reset:'Save new password'}[m] || 'Log In';
+        b.textContent = {register:'Create Account', forgot:'Send code', reset:'Save new password', confirm:'Confirm email'}[m] || 'Log In';
         b.dataset.mode = m;
         $('#authPassword').autocomplete = isReg || m === 'reset' ? 'new-password' : 'current-password';
-        if(m === 'reset') { $('#authPassword').value = ''; G.pw = ''; RCV = false; setTimeout(() => $('#authCode').focus(), 50); }
+        if(m === 'reset') { $('#authPassword').value = ''; G.pw = ''; RCV = false; }
+        if(m === 'reset' || m === 'confirm') { $('#authCode').value = ''; setTimeout(() => $('#authCode').focus(), 50); }
+    },
+    resendCode:async()=>{
+        const e=cl($('#authEmail').value,80).toLowerCase();
+        if(!EM.test(e)) return toast('Enter your university email');
+        if(!tok('cf')) return;
+        const r=await sb.auth.resend({type:'signup',email:e});
+        toast(r.error?r.error.message:'We sent a new code');
     },
     submitAuth:async()=>{
         const btn=$('#authBtn'), mode=btn.dataset.mode;
@@ -383,15 +395,32 @@ const A={
                 if(S.view==='landing') go('find'); else render(true);
                 return;
             }
+            if(mode === 'confirm') {
+                const code=$('#authCode').value.replace(/\s/g,'');
+                if(!EM.test(e)||!/^\d{6,10}$/.test(code)) return toast('Enter your email and the code from the email');
+                const v=await sb.auth.verifyOtp({email:e,token:code,type:'signup'});
+                if(v.error) return toast('The code is wrong or expired. Send the code again.');
+                await bootUser(v.data.user);
+                if(!S.me) return;
+                A.closeAuth();
+                toast('Email confirmed. Welcome, '+S.me.name);
+                if(S.view==='landing') go('find'); else render(true);
+                return;
+            }
             if(mode === 'register') {
                 if(!EM.test(e)||n.length<2||pw.length<8) return toast('Enter your name, a valid email and a password of 8+ characters');
                 const r=await sb.auth.signUp({email:e,password:pw,options:{data:{name:n}}});
                 if(r.error) return toast(/database error|^\s*\{\s*\}\s*$/i.test(r.error.message)||!e.endsWith('@astanait.edu.kz')?'Registration failed. Only @astanait.edu.kz addresses are allowed.':r.error.message);
-                if(!r.data.session) { A.closeAuth(); return toast('Account created. Confirm your email with the link we sent, then sign in.'); }
+                if(!r.data.session) return A.setAuth({m:'confirm'});
                 await bootUser(r.data.user);
             } else {
                 if(!EM.test(e)||!pw) return toast('Enter your university email and password');
                 const r=await sb.auth.signInWithPassword({email:e,password:pw});
+                if(r.error&&r.error.code==='email_not_confirmed'){
+                    A.setAuth({m:'confirm'});
+                    if(tok('cf')) await sb.auth.resend({type:'signup',email:e});
+                    return toast('Confirm your email first. We sent you a code.');
+                }
                 if(r.error) return toast(r.error.message);
                 await bootUser(r.data.user);
             }
