@@ -12,5 +12,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 
-# ...but keep schema migrations, they hold no data
+# ...but keep the schema and its migrations, they hold no user data
 !supabase/migrations/*.sql
+!supabase/schema.sql
