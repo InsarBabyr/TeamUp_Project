@@ -140,7 +140,7 @@ const head=()=>{
             </button>
 
             <nav class="bar" style="flex:none; align-items:center;">
-                ${tabs}${sndBtn()}
+                ${tabs}${bell()}${sndBtn()}
                 ${!m ? (S.view==='landing'?'<button class="ghost sm" data-a="how" style="border:none; margin-right:8px;">How it works</button>':'') + '<button class="btn sm" data-a="openAuth">Sign In / Register</button>' : ''}
             </nav>
         </div>
@@ -362,6 +362,19 @@ const A={
         const r=await sb.auth.resend({type:'signup',email:e});
         toast(r.error?r.error.message:'We sent a new code');
     },
+    bell:()=>{NOPEN=!NOPEN; render(false)},
+    nall:async()=>{
+        const r=await sb.from('notifications').update({read_at:new Date().toISOString()}).is('read_at',null);
+        if(r.error) return dberr(r.error);
+        NT.forEach(n=>{n.read_at=n.read_at||new Date().toISOString()}); render(false);
+    },
+    nopen:async d=>{
+        const n=NT.find(x=>String(x.id)===d.id); if(!n) return;
+        NOPEN=false;
+        if(!n.read_at){ n.read_at=new Date().toISOString(); sb.from('notifications').update({read_at:n.read_at}).eq('id',n.id).then(r=>r.error&&dberr(r.error)); }
+        if(n.kind==='status') return go('apps');
+        S.op=n.project_id; go('mine');
+    },
     submitAuth:async()=>{
         const btn=$('#authBtn'), mode=btn.dataset.mode;
         const e=cl($('#authEmail').value,80).toLowerCase(), n=cl($('#authName').value,60), pw=$('#authPassword').value;
@@ -431,7 +444,7 @@ const A={
         } finally { btn.disabled=false; }
     },
     
-    out:async()=>{await sb.removeAllChannels(); live=null; await sb.auth.signOut(); S.me=null; S.projects=[]; toast('Signed out'); go('landing')},
+    out:async()=>{await sb.removeAllChannels(); live=null; NT=[]; NOPEN=false; await sb.auth.signOut(); S.me=null; S.projects=[]; toast('Signed out'); go('landing')},
     open:d=>{
         S.pid=d.id;
         const p=P(), m=S.me, x=m&&m.skills.find(k=>p.req.concat(p.opt).includes(k.s));
@@ -547,6 +560,7 @@ const A={
 };
 
 document.addEventListener('click',e=>{
+    if(NOPEN&&!e.target.closest('.ntf')){ NOPEN=false; render(false); }
     const t=e.target.closest('[data-a]');
     if(!t||!A[t.dataset.a]) return;
     const a=t.dataset.a;
@@ -569,6 +583,7 @@ document.addEventListener('input',e=>{
 });
 
 document.addEventListener('keydown',e=>{
+    if(e.key==='Escape'&&NOPEN){ NOPEN=false; render(false); return; }
     const m=$('#authModal');
     if(!m||!m.classList.contains('visible')) return;
     if(e.key==='Escape') A.closeAuth();
@@ -624,6 +639,7 @@ async function load(){
     ]);
     const er=pr.error||ap.error||ct.error;
     if(er) return dberr(er);
+    await loadNotes();
     
     const tg={}; ct.data.forEach(c=>tg[c.user_id]=c.telegram);
     
@@ -639,24 +655,30 @@ async function load(){
     });
 }
 
-// Live updates: a new application on my project, or a status change on my own application
-let live=null;
+// Notifications: history for the bell, written by database triggers; new ones arrive live
+let NT=[], NOPEN=false, live=null;
+const ntText=n=>{
+    const t='“'+(n.project_title||'a project')+'”';
+    return n.kind==='new_application'?(n.actor_name||'Someone')+' applied to '+t
+        :n.kind==='withdrawn'?(n.actor_name||'A candidate')+' withdrew from '+t
+        :t+': '+(STT[STR[n.status]]||n.status);
+};
+const ago=d=>{const m=Math.max(0,Math.round((Date.now()-new Date(d))/60000));return m<1?'just now':m<60?m+' min ago':m<1440?Math.round(m/60)+' h ago':Math.round(m/1440)+' d ago'};
+const bell=()=>{
+    if(!S.me) return '';
+    const un=NT.filter(n=>!n.read_at).length;
+    return `<span class="ntf"><button class="ghost sm bell" data-a="bell" aria-expanded="${NOPEN}" aria-label="Notifications${un?', '+un+' unread':''}">${ic('bell')}${un?`<span class="bdg">${un>9?'9+':un}</span>`:''}</button>${NOPEN?`<div class="ntp" role="dialog" aria-label="Notifications"><div class="nth"><b>Notifications</b>${un?'<button class="lnk" data-a="nall">Mark all as read</button>':''}</div>${NT.length?NT.map(n=>`<button class="nti${n.read_at?'':' un'}" data-a="nopen" data-id="${n.id}"><span>${esc(ntText(n))}</span><span class="mut">${ago(n.created_at)}</span></button>`).join(''):'<div class="mut nte">No notifications yet</div>'}</div>`:''}</span>`;
+};
+async function loadNotes(){
+    if(!S.me) return;
+    const r=await sb.from('notifications').select('id,kind,project_id,project_title,actor_name,status,read_at,created_at').order('created_at',{ascending:false}).limit(30);
+    NT=r.error?[]:r.data;   // before the notifications migration runs the table is missing: just show none
+}
 function listen(){
     if(live||!S.me) return;
-    live=sb.channel('applications').on('postgres_changes',{event:'*',schema:'public',table:'applications'},async ev=>{
-        const n=ev.new||{}, uid=S.me&&S.me.uid;
-        if(!uid) return;
-        const known=S.projects.some(p=>p.offers.some(o=>o.id===(ev.old||{}).id));
-        let msg='';
-        if(ev.eventType==='INSERT'&&n.candidate_id!==uid){
-            const p=S.projects.find(x=>x.id===n.project_id);
-            msg='New application'+(p?' to “'+p.title+'”':'');
-        } else if(ev.eventType==='UPDATE'&&n.candidate_id===uid){
-            const p=S.projects.find(x=>x.id===n.project_id);
-            msg=(p?'“'+p.title+'”: ':'Your application: ')+(STT[STR[n.status]]||n.status);
-        } else if(ev.eventType!=='DELETE'||!known) return;
+    live=sb.channel('notifications').on('postgres_changes',{event:'INSERT',schema:'public',table:'notifications',filter:'user_id=eq.'+S.me.uid},async ev=>{
         await load();
-        if(msg){ toast(msg); beep(); }
+        toast(ntText(ev.new)); beep();
         // do not re-render under someone who is typing
         const a=document.activeElement;
         if(!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) render(false);
