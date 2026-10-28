@@ -3,6 +3,8 @@
 
 const SUPABASE_URL='https://emigzyfpkbpigncisehs.supabase.co';
 const SUPABASE_KEY='sb_publishable_j_cdvdOxvXw91W7yLHtVVg_86n9NOCS';
+// Cloudflare Turnstile site key (public). Empty = no CAPTCHA; it must be set before CAPTCHA is turned on in Supabase Auth.
+const TURNSTILE_SITEKEY='';
 const sb=/PASTE/.test(SUPABASE_URL+SUPABASE_KEY)?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let SKC=[], PRG=[], PCAT='';
@@ -50,6 +52,7 @@ document.body.insertAdjacentHTML('beforeend', `
     <button id="forgotLink" class="lnk" data-a="setAuth" data-m="forgot">Forgot password?</button>
     <button id="resendLink" class="lnk" data-a="resendCode" style="display:none;">Send the code again</button>
     <button id="backLink" class="lnk" data-a="setAuth" data-m="login" style="display:none;">← Back to sign in</button>
+    <div id="captcha" class="cap"></div>
     <button class="btn" data-a="submitAuth" id="authBtn" data-mode="login" style="margin-top:8px;">Log In</button>
   </div>
 </div>`);
@@ -154,11 +157,31 @@ const go=(v,top=true)=>{
 
 const need=()=>{if(S.me)return false; toast('Sign in with your university email first'); A.openAuth(); return true;};
 
+// CAPTCHA for sign-in, sign-up and the emails Supabase sends; each token works once
+let capId=null;
+function capRender(){
+    if(!TURNSTILE_SITEKEY||capId!==null||!window.turnstile) return;
+    capId=turnstile.render('#captcha',{sitekey:TURNSTILE_SITEKEY,appearance:'interaction-only',size:'flexible'});
+}
+// resolves to a token, undefined when CAPTCHA is off, or null if the check did not finish in 10 s
+async function capToken(){
+    if(!TURNSTILE_SITEKEY) return undefined;
+    for(let i=0;i<40;i++){
+        capRender();
+        const t=capId!==null&&turnstile.getResponse(capId);
+        if(t) return t;
+        await new Promise(r=>setTimeout(r,250));
+    }
+    toast('The security check did not finish. Reload the page and try again.');
+    return null;
+}
+const capReset=()=>{ if(capId!==null&&window.turnstile) turnstile.reset(capId); };
+
 const A={
     go:d=>{if(d.id)S.op=d.id; go(d.v)},
     how:()=>{const e=$('#how'); e&&e.scrollIntoView({behavior:RM?'auto':'smooth'})},
     
-    openAuth:()=>{ $('#authModal').classList.add('visible'); A.setAuth({m:'login'}); setTimeout(()=>$('#authEmail').focus(),50); },
+    openAuth:()=>{ $('#authModal').classList.add('visible'); A.setAuth({m:'login'}); capRender(); setTimeout(()=>$('#authEmail').focus(),50); },
     closeAuth:()=>{ $('#authModal').classList.remove('visible'); $('#authPassword').value=''; $('#authPassword2').value=''; $('#authCode').value=''; G.pw=''; RCV=false; },
     setAuth:d=>{
         const m = d.m, isReg = m === 'register', isRec = m === 'forgot' || m === 'reset' || m === 'confirm', show = (id, on) => { $(id).style.display = on ? '' : 'none'; };
@@ -189,7 +212,8 @@ const A={
         const e=cl($('#authEmail').value,80).toLowerCase();
         if(!EM.test(e)) return toast('Enter your university email');
         if(!tok('cf')) return;
-        const r=await sb.auth.resend({type:'signup',email:e});
+        const captchaToken=await capToken(); if(captchaToken===null) return;
+        const r=await sb.auth.resend({type:'signup',email:e,options:{captchaToken}}); capReset();
         toast(r.error?r.error.message:'We sent a new code');
     },
     bell:()=>{NOPEN=!NOPEN; render(false)},
@@ -213,7 +237,8 @@ const A={
             if(mode === 'forgot') {
                 if(!EM.test(e)) return toast('Enter your university email');
                 if(!tok('rst')) return;
-                const r=await sb.auth.resetPasswordForEmail(e);
+                const captchaToken=await capToken(); if(captchaToken===null) return;
+                const r=await sb.auth.resetPasswordForEmail(e,{captchaToken}); capReset();
                 if(r.error) return toast(r.error.message);
                 return A.setAuth({m:'reset'});
             }
@@ -252,16 +277,18 @@ const A={
             }
             if(mode === 'register') {
                 if(!EM.test(e)||n.length<2||pw.length<8) return toast('Enter your name, a valid email and a password of 8+ characters');
-                const r=await sb.auth.signUp({email:e,password:pw,options:{data:{name:n}}});
+                const captchaToken=await capToken(); if(captchaToken===null) return;
+                const r=await sb.auth.signUp({email:e,password:pw,options:{data:{name:n},captchaToken}}); capReset();
                 if(r.error) return toast(/database error|^\s*\{\s*\}\s*$/i.test(r.error.message)||!e.endsWith('@astanait.edu.kz')?'Registration failed. Only @astanait.edu.kz addresses are allowed.':r.error.message);
                 if(!r.data.session) return A.setAuth({m:'confirm'});
                 await bootUser(r.data.user);
             } else {
                 if(!EM.test(e)||!pw) return toast('Enter your university email and password');
-                const r=await sb.auth.signInWithPassword({email:e,password:pw});
+                const captchaToken=await capToken(); if(captchaToken===null) return;
+                const r=await sb.auth.signInWithPassword({email:e,password:pw,options:{captchaToken}}); capReset();
                 if(r.error&&r.error.code==='email_not_confirmed'){
                     A.setAuth({m:'confirm'});
-                    if(tok('cf')) await sb.auth.resend({type:'signup',email:e});
+                    if(tok('cf')){ const t=await capToken(); if(t!==null){ await sb.auth.resend({type:'signup',email:e,options:{captchaToken:t}}); capReset(); } }
                     return toast('Confirm your email first. We sent you a code.');
                 }
                 if(r.error) return toast(r.error.message);

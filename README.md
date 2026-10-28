@@ -27,6 +27,7 @@ An author posts a project with the skills it needs. Other students apply from th
 | Backend | [Supabase](https://supabase.com): PostgreSQL, Auth, Realtime |
 | Security | Row Level Security (RLS) policies on every table |
 | Email | Supabase Auth over Gmail SMTP |
+| Bot protection | Cloudflare Turnstile (CAPTCHA) on sign-in, sign-up and emailed codes |
 | Dev server | [live-server](https://www.npmjs.com/package/live-server) |
 
 ## Getting started
@@ -102,3 +103,4 @@ These live in the Supabase dashboard, not in the code:
 - **Authentication → Emails → SMTP Settings:** custom SMTP (Gmail with an app password). Without it Supabase only emails the project's own team members.
 - **Authentication → Emails → Templates:** *Confirm signup* and *Reset Password* contain `{{ .Token }}` (a code, not a link). University mail runs on Microsoft 365, whose Safe Links opens links in emails first and can use up a one-time link before the student clicks it.
 - **Realtime:** the `applications` table is in the `supabase_realtime` publication (migration 4).
+- **Authentication → Attack Protection → CAPTCHA:** Cloudflare Turnstile with its secret key. The matching public site key is `TURNSTILE_SITEKEY` at the top of `core.js`; both must be set together, or every sign-in fails. The Turnstile widget's hostnames must include every address the site is opened from (for example `localhost`).

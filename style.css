@@ -165,3 +165,7 @@ img{max-width:100%;height:auto}
 .nti.un { background: var(--lav); font-weight: 600; }
 .nti .mut { font-size: 12px; font-weight: 400; }
 .nte { padding: 12px 8px; }
+
+/* CAPTCHA: Turnstile stays invisible unless it needs the user to click */
+.cap:empty { display: none; }
+.cap iframe { max-width: 100%; }
