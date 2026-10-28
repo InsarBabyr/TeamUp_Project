@@ -376,7 +376,7 @@ const A={
         } finally { btn.disabled=false; }
     },
     
-    out:async()=>{await sb.auth.signOut(); S.me=null; S.projects=[]; toast('Signed out'); go('landing')},
+    out:async()=>{await sb.removeAllChannels(); live=null; await sb.auth.signOut(); S.me=null; S.projects=[]; toast('Signed out'); go('landing')},
     open:d=>{
         S.pid=d.id;
         const p=P(), m=S.me, x=m&&m.skills.find(k=>p.req.concat(p.opt).includes(k.s));
@@ -584,6 +584,30 @@ async function load(){
     });
 }
 
+// Live updates: a new application on my project, or a status change on my own application
+let live=null;
+function listen(){
+    if(live||!S.me) return;
+    live=sb.channel('applications').on('postgres_changes',{event:'*',schema:'public',table:'applications'},async ev=>{
+        const n=ev.new||{}, uid=S.me&&S.me.uid;
+        if(!uid) return;
+        const known=S.projects.some(p=>p.offers.some(o=>o.id===(ev.old||{}).id));
+        let msg='';
+        if(ev.eventType==='INSERT'&&n.candidate_id!==uid){
+            const p=S.projects.find(x=>x.id===n.project_id);
+            msg='New application'+(p?' to “'+p.title+'”':'');
+        } else if(ev.eventType==='UPDATE'&&n.candidate_id===uid){
+            const p=S.projects.find(x=>x.id===n.project_id);
+            msg=(p?'“'+p.title+'”: ':'Your application: ')+(STT[STR[n.status]]||n.status);
+        } else if(ev.eventType!=='DELETE'||!known) return;
+        await load();
+        if(msg){ toast(msg); beep(); }
+        // do not re-render under someone who is typing
+        const a=document.activeElement;
+        if(!(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))) render(false);
+    }).subscribe();
+}
+
 async function bootUser(u){
     let r=await sb.from('profiles').select('display_name,last_name,program_code,group_number,availability').eq('id',u.id).maybeSingle();
     if(r.error) return dberr(r.error);
@@ -598,6 +622,7 @@ async function bootUser(u){
     const[c,us]=await Promise.all([sb.from('contacts').select('telegram').eq('user_id',u.id).maybeSingle(),sb.from('user_skills').select('level,link_url,skills(name)').eq('user_id',u.id)]);
     S.me={id:'me',uid:u.id,name:pr.display_name,email:u.email,uni:u.email.split('@')[1],tg:c.data?c.data.telegram:'',last:pr.last_name||'',prog:pr.program_code||'',num:pr.group_number||'',avail:AVR[pr.availability]||'This week',skills:(us.data||[]).map(x=>({s:x.skills.name,level:Math.max(0,LVDB.indexOf(x.level)),link:x.link_url||''}))};
     await loadSkills(); await load();
+    listen();
 }
 
 let spT,tT,lT={};
