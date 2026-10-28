@@ -127,3 +127,4 @@ img{max-width:100%;height:auto}
 .nv{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
 .nv .ic{width:20px;height:20px}
 .snd{padding:0 10px}.snd .snd-t{display:none}
+.lnk { align-self: flex-start; background: none; border: none; padding: 0; color: var(--ink); font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer; }

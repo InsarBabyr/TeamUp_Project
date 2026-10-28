@@ -152,3 +152,4 @@ img{max-width:100%;height:auto}
 .nv .ic{width:18px;height:18px}
 @media (min-width:901px){.lh .big{font-size:clamp(32px,4.4vw,56px);max-width:54%}.lh .in p{max-width:52%}}
 @media (max-width:900px){.hero-img{position:static;transform:none;width:100%;max-width:360px}}
+.lnk { align-self: flex-start; background: none; border: none; padding: 0; color: var(--lav2); font: inherit; font-size: 14px; font-weight: 600; text-decoration: underline; cursor: pointer; }

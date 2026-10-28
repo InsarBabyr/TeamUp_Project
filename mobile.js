@@ -18,7 +18,7 @@ document.body.insertAdjacentHTML('beforeend', `
       <h2 id="authModalTitle" style="font-size:20px;margin:0;">Sign In</h2>
       <button class="ghost sm" data-a="closeAuth" aria-label="Close" style="min-height:32px;padding:0 8px;border-radius:8px;">✕</button>
     </div>
-    <div class="tabs-row">
+    <div id="authTabs" class="tabs-row">
       <button id="tabLogin" class="active" data-a="setAuth" data-m="login">Sign In</button>
       <button id="tabRegister" data-a="setAuth" data-m="register">Register</button>
     </div>
@@ -30,10 +30,21 @@ document.body.insertAdjacentHTML('beforeend', `
       <label class="lbl" for="authEmail">Email</label>
       <input id="authEmail" class="fld" data-k="G.email" type="email" maxlength="80" autocomplete="username" placeholder="name@astanait.edu.kz">
     </div>
-    <div class="col">
-      <label class="lbl" for="authPassword">Password</label>
+    <div id="authHint" class="mut" style="display:none;"></div>
+    <div id="codeFields" class="col" style="display:none;">
+      <label class="lbl" for="authCode">Code from the email</label>
+      <input id="authCode" class="fld" inputmode="numeric" maxlength="10" autocomplete="one-time-code" placeholder="123456">
+    </div>
+    <div id="pwFields" class="col">
+      <label class="lbl" for="authPassword" id="authPwLbl">Password</label>
       <input id="authPassword" class="fld" data-k="G.pw" type="password" maxlength="72" autocomplete="current-password" placeholder="••••••••">
     </div>
+    <div id="pw2Fields" class="col" style="display:none;">
+      <label class="lbl" for="authPassword2">Repeat new password</label>
+      <input id="authPassword2" class="fld" type="password" maxlength="72" autocomplete="new-password" placeholder="••••••••">
+    </div>
+    <button id="forgotLink" class="lnk" data-a="setAuth" data-m="forgot">Forgot password?</button>
+    <button id="backLink" class="lnk" data-a="setAuth" data-m="login" style="display:none;">← Back to sign in</button>
     <button class="btn" data-a="submitAuth" id="authBtn" data-mode="login" style="margin-top:8px;">Log In</button>
   </div>
 </div>`);
@@ -43,7 +54,7 @@ const F={skills:[],type:'All',novice:false,urgent:false,q:''};
 const nR=()=>({skill:'',level:1,link:'',did:'',when:'Today',tg:''});
 const nC=()=>({title:'',type:'Hackathon',desc:'',sk:{},urgent:false,trial:'Quick chat',trialTask:'',trialDue:'',novice:true,n:1});
 
-let R=nR(), C=nC(), G={name:'',email:'',pw:''}, tm, lastT=0;
+let R=nR(), C=nC(), G={name:'',email:'',pw:''}, RCV=false, tm, lastT=0;
 const P=()=>S.projects.find(p=>p.id===S.pid);
 
 const chip=(t,on,at,x='')=>`<button class="chip${on?' on':''}${x}" ${at}>${esc(t)}</button>`;
@@ -81,7 +92,7 @@ function toast(m){
     tm=setTimeout(()=>t.classList.remove('sh'),2800);
 }
 
-const BK={send:[3,1/20],pub:[2,1/30],st:[10,1/2],cl:[10,1/2]};
+const BK={rst:[3,1/60],send:[3,1/20],pub:[2,1/30],st:[10,1/2],cl:[10,1/2]};
 function tok(n){
     const[c,r]=BK[n];
     let b={};
@@ -262,23 +273,61 @@ const A={
     how:()=>{const e=$('#how'); e&&e.scrollIntoView({behavior:RM?'auto':'smooth'})},
     
     openAuth:()=>{ $('#authModal').classList.add('visible'); A.setAuth({m:'login'}); setTimeout(()=>$('#authEmail').focus(),50); },
-    closeAuth:()=>{ $('#authModal').classList.remove('visible'); $('#authPassword').value=''; G.pw=''; },
+    closeAuth:()=>{ $('#authModal').classList.remove('visible'); $('#authPassword').value=''; $('#authPassword2').value=''; $('#authCode').value=''; G.pw=''; RCV=false; },
     setAuth:d=>{
-        const isReg = d.m === 'register';
-        $('#regFields').style.display = isReg ? 'flex' : 'none';
+        const m = d.m, isReg = m === 'register', isRec = m === 'forgot' || m === 'reset', show = (id, on) => { $(id).style.display = on ? '' : 'none'; };
+        show('#authTabs', !isRec);
+        show('#regFields', isReg);
+        show('#authHint', isRec);
+        show('#codeFields', m === 'reset');
+        show('#pwFields', m !== 'forgot');
+        show('#pw2Fields', m === 'reset');
+        show('#forgotLink', m === 'login');
+        show('#backLink', isRec);
         $('#tabLogin').classList.toggle('active', !isReg);
         $('#tabRegister').classList.toggle('active', isReg);
-        $('#authModalTitle').textContent = isReg ? 'Register' : 'Sign In';
+        $('#authModalTitle').textContent = {register:'Register', forgot:'Reset password', reset:'Set a new password'}[m] || 'Sign In';
+        $('#authHint').textContent = m === 'forgot' ? 'Enter your university email. We will send you a code to reset your password.' : 'If this email is registered, we sent a code to it. It can take a few minutes, check the Junk folder too.';
+        $('#authPwLbl').textContent = m === 'reset' ? 'New password' : 'Password';
         const b = $('#authBtn');
-        b.textContent = isReg ? 'Create Account' : 'Log In';
-        b.dataset.mode = d.m;
-        $('#authPassword').autocomplete = isReg ? 'new-password' : 'current-password';
+        b.textContent = {register:'Create Account', forgot:'Send code', reset:'Save new password'}[m] || 'Log In';
+        b.dataset.mode = m;
+        $('#authPassword').autocomplete = isReg || m === 'reset' ? 'new-password' : 'current-password';
+        if(m === 'reset') { $('#authPassword').value = ''; G.pw = ''; RCV = false; setTimeout(() => $('#authCode').focus(), 50); }
     },
     submitAuth:async()=>{
         const btn=$('#authBtn'), mode=btn.dataset.mode;
         const e=cl($('#authEmail').value,80).toLowerCase(), n=cl($('#authName').value,60), pw=$('#authPassword').value;
         btn.disabled=true;
         try{
+            if(mode === 'forgot') {
+                if(!EM.test(e)) return toast('Enter your university email');
+                if(!tok('rst')) return;
+                const r=await sb.auth.resetPasswordForEmail(e);
+                if(r.error) return toast(r.error.message);
+                return A.setAuth({m:'reset'});
+            }
+            if(mode === 'reset') {
+                const code=$('#authCode').value.replace(/\s/g,''), pw2=$('#authPassword2').value;
+                if(!EM.test(e)||!/^\d{6,10}$/.test(code)) return toast('Enter your email and the code from the email');
+                if(pw.length<8) return toast('The new password needs 8+ characters');
+                if(pw!==pw2) return toast('The passwords do not match');
+                // the code is single-use: once it is accepted, a retry (e.g. after a rejected password) only repeats the update
+                if(!RCV){
+                    const v=await sb.auth.verifyOtp({email:e,token:code,type:'recovery'});
+                    if(v.error) return toast('The code is wrong or expired. Request a new one.');
+                    RCV=true;
+                }
+                const u=await sb.auth.updateUser({password:pw});
+                if(u.error) return toast(u.error.message);
+                RCV=false;
+                await bootUser(u.data.user);
+                if(!S.me) return;
+                A.closeAuth();
+                toast('Password updated');
+                if(S.view==='landing') go('find'); else render(true);
+                return;
+            }
             if(mode === 'register') {
                 if(!EM.test(e)||n.length<2||pw.length<8) return toast('Enter your name, a valid email and a password of 8+ characters');
                 const r=await sb.auth.signUp({email:e,password:pw,options:{data:{name:n}}});
