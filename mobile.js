@@ -218,7 +218,7 @@ V.manage=V.mine;
 V.apps=()=>{
     const L=[];
     S.projects.forEach(p=>p.offers.filter(o=>o.cid==='me').forEach(o=>L.push([p,o])));
-    return `<div class="wrap"><div class="main col" style="gap:16px"><h1>My applications</h1>${L.length?L.map(([p,o])=>`<div class="card"><div class="top"><h3>${esc(p.title)}</h3><span class="chip ${o.st==='team'||o.st==='trial'?'on':''}">${STT[o.st]}</span></div><div class="mut">${p.type} · ${esc(p.author)}${p.status==='closed'?' · Project closed':''}</div><div class="row"><span class="chip req">${esc(o.skill)} · ${LV[o.level]}</span></div>${o.st==='team'?`<div class="mut">Author's Telegram: <b>${esc(p.tg||'not provided')}</b></div>`:'<div class="mut">The author\'s contact opens once you are accepted.</div>'}${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}<div class="row"><button class="ghost" data-a="open" data-id="${p.id}">View project</button></div></div>`).join(''):'<div class="card">You have not applied yet.<button class="btn" data-a="go" data-v="find">Find projects</button></div>'}</div></div>`;
+    return `<div class="wrap"><div class="main col" style="gap:16px"><h1>My applications</h1>${L.length?L.map(([p,o])=>`<div class="card"><div class="top"><h3>${esc(p.title)}</h3><span class="chip ${o.st==='team'||o.st==='trial'?'on':''}">${STT[o.st]}</span></div><div class="mut">${p.type} · ${esc(p.author)}${p.status==='closed'?' · Project closed':''}</div><div class="row"><span class="chip req">${esc(o.skill)} · ${LV[o.level]}</span></div>${o.st==='team'?`<div class="mut">Author's Telegram: <b>${esc(p.tg||'not provided')}</b></div>`:'<div class="mut">The author\'s contact opens once you are accepted.</div>'}${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}<div class="row"><button class="ghost" data-a="open" data-id="${p.id}">View project</button>${o.st==='new'||o.st==='trial'?`<button class="ghost" data-a="wd" data-o="${o.id}">Withdraw</button>`:''}</div></div>`).join(''):'<div class="card">You have not applied yet.<button class="btn" data-a="go" data-v="find">Find projects</button></div>'}</div></div>`;
 };
 
 V.profile=()=>{
@@ -385,6 +385,7 @@ const A={
         if(r.error) return dberr(r.error);
         await load(); toast(d.s==='trial'?'Moved to trial':d.s==='team'?'Accepted, contact opened':'Rejected'); render();
     },
+    wd:async d=>{if(!confirm('Withdraw this application? The author will no longer see it.')||!tok('cl'))return; const r=await sb.from('applications').delete().eq('id',d.o); if(r.error) return dberr(r.error); await load(); toast('Application withdrawn'); render();},
     close:async()=>{if(!tok('cl'))return; const r=await sb.from('projects').update({status:'closed'}).eq('id',S.op); if(r.error) return dberr(r.error); await load(); toast('Project closed'); render();},
     reopen:async()=>{if(!tok('cl'))return; const r=await sb.from('projects').update({status:'open'}).eq('id',S.op); if(r.error) return dberr(r.error); await load(); toast('Project reopened'); render();},
     pav:d=>{S.me.avail=d.w; queueProfile(); render();},
