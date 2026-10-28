@@ -4,7 +4,7 @@
 const SUPABASE_URL='https://emigzyfpkbpigncisehs.supabase.co';
 const SUPABASE_KEY='sb_publishable_j_cdvdOxvXw91W7yLHtVVg_86n9NOCS';
 // Cloudflare Turnstile site key (public). Empty = no CAPTCHA; it must be set before CAPTCHA is turned on in Supabase Auth.
-const TURNSTILE_SITEKEY='';
+const TURNSTILE_SITEKEY='0x4AAAAAAFp02kb3de86slUI';
 const sb=/PASTE/.test(SUPABASE_URL+SUPABASE_KEY)?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let SKC=[], PRG=[], PCAT='';
