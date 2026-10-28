@@ -1,6 +1,6 @@
 const SUPABASE_URL='https://emigzyfpkbpigncisehs.supabase.co';
 const SUPABASE_KEY='sb_publishable_j_cdvdOxvXw91W7yLHtVVg_86n9NOCS';
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+const sb=/PASTE/.test(SUPABASE_URL+SUPABASE_KEY)?null:supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
 
 let SKC=[], PRG=[], PCAT='';
 const MAXPS=8, MAXMS=15;
@@ -48,6 +48,10 @@ const P=()=>S.projects.find(p=>p.id===S.pid);
 
 const chip=(t,on,at,x='')=>`<button class="chip${on?' on':''}${x}" ${at}>${esc(t)}</button>`;
 const skl=p=>p.req.map(s=>`<span class="chip req">${esc(s)}</span>`).join('')+p.opt.map(s=>`<span class="chip opt">${esc(s)}</span>`).join('');
+const todayStr=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
+const realDate=s=>{ if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const[y,m,d]=s.split('-').map(Number), x=new Date(y,m-1,d); return x.getFullYear()===y&&x.getMonth()===m-1&&x.getDate()===d; };
+const okDate=s=>realDate(s)&&s>=todayStr();   // a real calendar date, today or later
+const TGRE=/^@[A-Za-z][A-Za-z0-9_]{4,31}$/;   // Telegram: 5-32 characters, starts with a letter
 const HEAVY=/[?&]heavy\b/.test(location.search);   // ?heavy = unoptimised originals, used only for the before/after measurement
 const ic=n=>`<svg class="ic" aria-hidden="true" focusable="false"><use href="assets/icons.svg#i-${n}"></use></svg>`;
 const pic=(n,alt,w,h,s1,s2,sizes,cls='')=>HEAVY
@@ -181,7 +185,7 @@ V.create=()=>`<div class="wrap"><div class="main card"><h1>New project</h1>
 <div class="side card w380"><h3>Terms</h3>
 <div class="col"><div class="lbl">Urgency</div><div class="row">${chip('Not urgent',!C.urgent,'data-a="cu" data-u="0"')}${chip('Urgent',C.urgent,'data-a="cu" data-u="1"')}</div></div>
 <div class="col"><div class="lbl">Trial</div><div class="row">${TR.map(t=>chip(t,C.trial===t,`data-a="ctr" data-t="${t}"`)).join('')}</div></div>
-<div class="col"><label class="lbl" for="tt">Trial task (optional)</label><textarea id="tt" class="fld" data-k="C.trialTask" maxlength="300" placeholder="A small independent task">${esc(C.trialTask)}</textarea></div><div class="col"><label class="lbl" for="td">Trial deadline (optional)</label><input id="td" type="date" class="fld" data-k="C.trialDue" value="${esc(C.trialDue)}"></div>
+<div class="col"><label class="lbl" for="tt">Trial task (optional)</label><textarea id="tt" class="fld" data-k="C.trialTask" maxlength="300" placeholder="A small independent task">${esc(C.trialTask)}</textarea></div><div class="col"><label class="lbl" for="td">Trial deadline (optional)</label><input id="td" type="date" min="${todayStr()}" class="fld" data-k="C.trialDue" value="${esc(C.trialDue)}"></div>
 <div class="row" style="justify-content:space-between"><span class="lbl">Beginners welcome</span>${chip(C.novice?'Yes':'No',C.novice,'data-a="cno"')}</div>
 <div class="row" style="justify-content:space-between"><span class="lbl">People needed</span><div class="row">${chip('−',0,'data-a="cn" data-d="-1"')}<b>${C.n}</b>${chip('+',0,'data-a="cn" data-d="1"')}</div></div>
 <div class="mut">Your Telegram (from Profile) opens to a candidate after you accept them.</div><button class="btn" data-a="pub">Publish</button></div></div>`;
@@ -332,7 +336,8 @@ const A={
         let l=cl(R.link,300);
         if(p.authorId==='me') return toast('You cannot apply to your own project');
         if(applied(p)) return toast('You have already applied');
-        if(!p.req.concat(p.opt).includes(R.skill)||d.length<5||!/^@[A-Za-z0-9_]{5,32}$/.test(tg)) return toast('Check the fields: describe what you did (5+ characters), Telegram like @username');
+        if(!R.skill) return toast('Choose the skill you are applying with');
+        if(!p.req.concat(p.opt).includes(R.skill)||d.length<5||!TGRE.test(tg)) return toast('Check the fields: describe what you did (5+ characters), Telegram like @username');
         if(l){
             if(!/^https?:\/\//i.test(l)) l='https://'+l;
             try{if(!/^https?:$/.test(new URL(l).protocol)) throw 0}catch(e){return toast('That link looks invalid')}
@@ -362,7 +367,8 @@ const A={
         const req=Object.keys(C.sk).filter(s=>C.sk[s]==='req'), opt=Object.keys(C.sk).filter(s=>C.sk[s]==='opt');
         if(cl(C.title,80).length<3||!req.length) return toast('Add a title (3+ characters) and at least one required skill');
         if(!tok('pub')) return;
-        const due=/^\d{4}-\d{2}-\d{2}$/.test(C.trialDue)?C.trialDue:null;
+        if(C.trialDue&&!okDate(C.trialDue)) return toast('Trial deadline must be a real date, today or later');
+        const due=C.trialDue?C.trialDue:null;
         let r=await sb.from('projects').insert({author_id:S.me.uid,title:cl(C.title,80),project_type:TYDB[C.type],description:cl(C.desc,1000)||'No description yet.',urgent:C.urgent,beginner_friendly:C.novice,spots_needed:C.n,trial_format:C.trial,trial_task:cl(C.trialTask,300)||null,trial_due:due}).select('id').single();
         if(r.error) return dberr(r.error);
         const id=r.data.id, rows=req.map(k=>({project_id:id,skill_id:SKID[k],is_required:true})).concat(opt.map(k=>({project_id:id,skill_id:SKID[k],is_required:false})));
@@ -419,13 +425,15 @@ document.addEventListener('click',e=>{
     }).catch(x=>{console.error(x); toast('Something went wrong. Try again.');});
 });
 
+function bindK(t){
+    const[o,k]=t.dataset.k.split('.'), m={R,C,G,M:S.me,T:S.projects.find(x=>x.id===S.op)}[o];
+    if(o==='M'&&k==='num'){ t.value=t.value.replace(/\D/g,'').slice(0,4); }
+    if(m){ m[k]=t.value; if(o==='M') queueProfile(); if(o==='T') queueTrial(); }
+}
+
 document.addEventListener('input',e=>{
     const t=e.target;
-    if(t.dataset.k){
-        const[o,k]=t.dataset.k.split('.'), m={R,C,G,M:S.me,T:S.projects.find(x=>x.id===S.op)}[o];
-        if(o==='M'&&k==='num'){ t.value=t.value.replace(/\D/g,'').slice(0,4); }
-        if(m){ m[k]=t.value; if(o==='M') queueProfile(); if(o==='T') queueTrial(); }
-    }
+    if(t.dataset.k) bindK(t);
     if(t.dataset.pl!==undefined&&S.me){ S.me.skills[+t.dataset.pl].link=cl(t.value,300); queueLink(+t.dataset.pl); }
     if(t.id==='q'){ F.q=t.value; $('#grid').innerHTML=grid(); }
 });
@@ -442,6 +450,7 @@ document.addEventListener('keydown',e=>{
 
 document.addEventListener('change',e=>{
     const t=e.target, a=t.dataset&&t.dataset.c;
+    if(t.dataset&&t.dataset.k&&t.tagName==='SELECT') bindK(t);
     if(!a||!A[a]) return;
     Promise.resolve(A[a](t.dataset,t.value)).catch(x=>{console.error(x); toast('Something went wrong. Try again.');});
 });
@@ -455,7 +464,8 @@ const SKID={};
 
 function dberr(e){
     const m=String(e&&e.message||e);
-    toast(e&&e.code==='23505'?'This already exists (duplicate)':(e&&e.code==='42501')||/row-level security/i.test(m)?'Not allowed by the database rules':e&&e.code==='23514'?'The database rejected this value':'Database error: '+m.slice(0,90));
+    const rls=(e&&e.code==='42501')||/row-level security/i.test(m);
+    toast(e&&e.code==='23505'?'This already exists (duplicate)':rls?'Not allowed by the database rules':e&&e.code==='23514'?'The database rejected this value':'Database error: '+m.slice(0,90));
 }
 
 async function loadSkills(){
@@ -526,7 +536,7 @@ async function syncProfile(){
     let r=await sb.from('profiles').update(up).eq('id',m.uid);
     if(r.error) return dberr(r.error);
     const t=cl(m.tg,33);
-    if(/^@[A-Za-z0-9_]{5,32}$/.test(t)){
+    if(TGRE.test(t)){
         r=await sb.from('contacts').upsert({user_id:m.uid,telegram:t});
         if(r.error) dberr(r.error);
     }
@@ -535,7 +545,7 @@ const queueTrial=()=>{
     clearTimeout(tT);
     tT=setTimeout(async()=>{
         const p=S.projects.find(x=>x.id===S.op); if(!p||p.authorId!=='me')return;
-        const r=await sb.from('projects').update({trial_task:cl(p.trialTask,300)||null,trial_due:/^\d{4}-\d{2}-\d{2}$/.test(p.trialDue)?p.trialDue:null}).eq('id',p.id);
+        const r=await sb.from('projects').update({trial_task:cl(p.trialTask,300)||null,trial_due:realDate(p.trialDue)?p.trialDue:null}).eq('id',p.id);
         if(r.error) dberr(r.error);
     },800);
 };
@@ -573,7 +583,7 @@ const E={
     }catch(e){}
 })();
 
-const sc=p=>{const q=F.q.toLowerCase();return Math.max(E.fuzzy(q,p.title.toLowerCase()),(p.desc||'').toLowerCase().includes(q)?5:-1,...p.req.concat(p.opt).map(s=>E.fuzzy(q,s.toLowerCase())))};
+const sc=p=>{const q=F.q.toLowerCase();return Math.max(E.fuzzy(q,p.title.toLowerCase()),(p.desc||'').toLowerCase().includes(q)?30:-1,...p.req.concat(p.opt).map(s=>E.fuzzy(q,s.toLowerCase())))};
 const stag=()=>document.querySelectorAll('.card,.lh .in>*').forEach((c,i)=>c.style.setProperty('--i',Math.min(i,9)));
 function smoothTop(){if(RM||!scrollY)return scrollTo(0,0);let y=scrollY,v=0,l=performance.now();(function f(n){const dt=Math.min(.032,(n-l)/1000)||.016;l=n;[y,v]=E.spring(y,v,0,dt,180,22);scrollTo(0,y);if(Math.abs(y)>.5||Math.abs(v)>1)requestAnimationFrame(f);else scrollTo(0,0)})(l)}
 const io='IntersectionObserver' in window?new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('v');io.unobserve(e.target)}}),{threshold:.12}):null;
