@@ -58,6 +58,7 @@ mobile.js         mobile app (same logic as app.js, mobile layout)
 mobile.css        mobile styles
 assets/           logo, icons, illustrations (webp + svg), notification sound
 assets/original/  unoptimised PNG originals, used only with ?heavy
+supabase/schema.sql   full database schema, to restore it into a new project
 supabase/migrations/  database changes, in the order they were applied
 ```
 
@@ -84,9 +85,10 @@ Rules enforced by the database, not only by the page:
 - At most 10 new projects per user per day (trigger `limit_projects_per_day`).
 - Applying is one transaction (function `apply_to_project`): the skill, contact, availability and application are saved together or not at all.
 
-### Migrations
+### Schema and migrations
 
-`supabase/migrations/` holds the database changes made after the initial setup, numbered in the order they were applied. Run new ones in **Supabase → SQL Editor**. The initial schema (tables, policies and triggers) was created in the Supabase dashboard and is not in this folder yet.
+- **`supabase/schema.sql`** is the full current database: tables, constraints, functions, triggers, RLS policies, Realtime and the catalogue data (skill categories, skills, study programmes). No user data. To restore the database into a new, empty Supabase project, run this file alone in **SQL Editor**, then set up the dashboard settings listed below.
+- **`supabase/migrations/`** is the history of changes made after the initial setup, numbered in the order they were applied. `schema.sql` already includes them. Run a *new* migration in **SQL Editor** on the live project, and update `schema.sql` to match.
 
 `.gitignore` ignores `*.sql` files (database dumps can contain test data) except the migrations folder.
 
