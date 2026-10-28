@@ -102,5 +102,5 @@ These live in the Supabase dashboard, not in the code:
 - **Authentication → Sign In / Providers → Email:** *Confirm email* is on.
 - **Authentication → Emails → SMTP Settings:** custom SMTP (Gmail with an app password). Without it Supabase only emails the project's own team members.
 - **Authentication → Emails → Templates:** *Confirm signup* and *Reset Password* contain `{{ .Token }}` (a code, not a link). University mail runs on Microsoft 365, whose Safe Links opens links in emails first and can use up a one-time link before the student clicks it.
-- **Realtime:** the `applications` table is in the `supabase_realtime` publication (migration 4).
+- **Realtime:** the `notifications` table is in the `supabase_realtime` publication (migration 5).
 - **Authentication → Attack Protection → CAPTCHA:** Cloudflare Turnstile with its secret key. The matching public site key is `TURNSTILE_SITEKEY` at the top of `core.js`; both must be set together, or every sign-in fails. The Turnstile widget's hostnames must include every address the site is opened from (for example `localhost`).
