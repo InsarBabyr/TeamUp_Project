@@ -169,3 +169,6 @@ img{max-width:100%;height:auto}
 /* CAPTCHA: Turnstile stays invisible unless it needs the user to click */
 .cap:empty { display: none; }
 .cap iframe { max-width: 100%; }
+
+/* result counter above the project list */
+.cnt { grid-column: 1 / -1; font-size: 13px; }

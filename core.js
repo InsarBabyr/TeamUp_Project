@@ -124,8 +124,9 @@ const card=p=>`<article class="card" data-a="open" data-id="${p.id}"><div class=
 
 const grid=()=>{
     if(!S.ready) return '<div class="card">Loading projects…</div>';
-    const v=vis();
-    return v.length?v.map(card).join(''):'<div class="card">Nothing found. Clear some filters or create your own project.</div>';
+    const v=vis(), n=v.length, filtered=F.skills.length||F.type!=='All'||F.novice||F.urgent||F.q;
+    const cnt=`<div class="mut cnt" role="status">${n} project${n===1?'':'s'}${filtered?' match your filters':''}${S.more?` · newest ${PLIM} loaded`:''}</div>`;
+    return cnt+(n?v.map(card).join(''):`<div class="card">Nothing found.${filtered?' <button class="lnk" data-a="fclr">Clear all filters</button>':''} Or create your own project.</div>`);
 };
 
 // Views shared by both layouts; each page adds the rest to V
@@ -216,6 +217,7 @@ const A={
         const r=await sb.auth.resend({type:'signup',email:e,options:{captchaToken}}); capReset();
         toast(r.error?r.error.message:'We sent a new code');
     },
+    fclr:()=>{F.skills=[]; F.type='All'; F.novice=false; F.urgent=false; F.q=''; render(false)},
     bell:()=>{NOPEN=!NOPEN; render(false)},
     nall:async()=>{
         const r=await sb.from('notifications').update({read_at:new Date().toISOString()}).is('read_at',null);
@@ -467,6 +469,7 @@ const SKID={};
 function dberr(e){
     const m=String(e&&e.message||e);
     const rls=(e&&e.code==='42501')||/row-level security/i.test(m);
+    if(e&&e.code==='P0001') return toast(m.slice(0,120));
     toast(e&&e.code==='23505'?'This already exists (duplicate)':rls?'Not allowed by the database rules':e&&e.code==='23514'?'The database rejected this value':'Database error: '+m.slice(0,90));
 }
 
@@ -486,21 +489,32 @@ async function loadSkills(){
     if(pg.error) dberr(pg.error); else PRG=pg.data;
 }
 
+// Find shows the newest PLIM open projects; your own and the ones you applied to are always loaded
+const PLIM=100;
+const PF='id,author_id,title,project_type,description,urgent,beginner_friendly,spots_needed,status,trial_format,trial_task,trial_due,created_at,author:profiles!projects_author_id_fkey(display_name,program_code,group_number),project_skills(is_required,skills(name))';
 async function load(){
     if(!S.me) return;
     const uid=S.me.uid;
-    const[pr,ap,ct]=await Promise.all([
-        sb.from('projects').select('id,author_id,title,project_type,description,urgent,beginner_friendly,spots_needed,status,trial_format,trial_task,trial_due,created_at,author:profiles!projects_author_id_fkey(display_name,program_code,group_number),project_skills(is_required,skills(name))').order('created_at',{ascending:false}),
+    const[pr,mn,ap,ct]=await Promise.all([
+        sb.from('projects').select(PF).eq('status','open').neq('author_id',uid).order('created_at',{ascending:false}).limit(PLIM),
+        sb.from('projects').select(PF).eq('author_id',uid),
         sb.from('applications').select('id,project_id,candidate_id,note,status,created_at,cand:profiles!applications_candidate_id_fkey(display_name,last_name,program_code,group_number,availability,user_skills(level,link_url,skills(name)))').order('created_at',{ascending:false}),
         sb.from('contacts').select('user_id,telegram')
     ]);
-    const er=pr.error||ap.error||ct.error;
+    const er=pr.error||mn.error||ap.error||ct.error;
     if(er) return dberr(er);
+    // projects you applied to that are closed or older than the newest PLIM
+    const have=new Set(pr.data.concat(mn.data).map(p=>p.id));
+    const miss=[...new Set(ap.data.filter(a=>a.candidate_id===uid&&!have.has(a.project_id)).map(a=>a.project_id))];
+    let ex=[];
+    if(miss.length){ const r=await sb.from('projects').select(PF).in('id',miss); if(r.error) return dberr(r.error); ex=r.data; }
+    const rows=pr.data.concat(mn.data,ex).sort((a,b)=>a.created_at<b.created_at?1:a.created_at>b.created_at?-1:0);
+    S.more=pr.data.length===PLIM;
     await loadNotes();
     
     const tg={}; ct.data.forEach(c=>tg[c.user_id]=c.telegram);
     
-    S.projects=pr.data.map(p=>{
+    S.projects=rows.map(p=>{
         const req=[], opt=[];
         (p.project_skills||[]).forEach(x=>(x.is_required?req:opt).push(x.skills.name));
         const all=req.concat(opt);

@@ -4,7 +4,7 @@
 --
 -- Not in this file (they live in the dashboard): Auth settings, SMTP and email templates.
 -- See "Supabase settings the app relies on" in README.md.
--- Exported 2026-10-28.
+-- Exported 2026-10-28, updated with migration 6.
 
 begin;
 
@@ -134,6 +134,21 @@ begin
       where author_id = new.author_id
         and created_at > now() - interval '1 day') >= 10 then
     raise exception 'Daily project limit reached';
+  end if;
+  return new;
+end $$;
+
+-- At most 20 applications per candidate per day
+create or replace function public.limit_applications_per_day()
+returns trigger
+language plpgsql
+set search_path = public
+as $$
+begin
+  if (select count(*) from applications
+      where candidate_id = new.candidate_id
+        and created_at > now() - interval '1 day') >= 20 then
+    raise exception 'Daily application limit reached (20). Try again tomorrow.';
   end if;
   return new;
 end $$;
@@ -287,6 +302,7 @@ revoke execute on function public.enforce_university_email() from public, anon, 
 revoke execute on function public.rls_auto_enable()          from public, anon, authenticated;
 revoke execute on function public.lock_application_fields()  from public, anon, authenticated;
 revoke execute on function public.limit_projects_per_day()   from public, anon, authenticated;
+revoke execute on function public.limit_applications_per_day() from public, anon, authenticated;
 revoke execute on function private.notify_application()      from public, anon, authenticated;
 revoke execute on function public.apply_to_project(uuid, int, text, text, text, text, text) from public, anon;
 grant  execute on function public.apply_to_project(uuid, int, text, text, text, text, text) to authenticated;
@@ -304,6 +320,10 @@ create trigger university_email_only
 create trigger projects_daily_limit
   before insert on public.projects
   for each row execute function public.limit_projects_per_day();
+
+create trigger applications_daily_limit
+  before insert on public.applications
+  for each row execute function public.limit_applications_per_day();
 
 create trigger lock_application_fields
   before update on public.applications

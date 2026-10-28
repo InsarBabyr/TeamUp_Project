@@ -85,7 +85,7 @@ Rules enforced by the database, not only by the page:
 - Only `@astanait.edu.kz` addresses can register (trigger `enforce_university_email` on `auth.users`).
 - You cannot apply to your own project or to a closed one, and only once per project.
 - Only the project author can change an application's status. Its project and candidate cannot be changed (trigger `lock_application_fields`).
-- At most 10 new projects per user per day (trigger `limit_projects_per_day`).
+- At most 10 new projects and 20 applications per user per day (triggers `limit_projects_per_day`, `limit_applications_per_day`).
 - Applying is one transaction (function `apply_to_project`): the skill, contact, availability and application are saved together or not at all.
 
 ### Schema and migrations
