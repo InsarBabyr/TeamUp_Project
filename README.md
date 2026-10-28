@@ -51,10 +51,12 @@ The app talks to the Supabase project set at the top of `app.js` and `mobile.js`
 
 ```
 index.html        desktop page (redirects phones to mobile.html)
-app.js            desktop app: views, actions, Supabase calls
-style.css         desktop styles
 mobile.html       mobile page
-mobile.js         mobile app (same logic as app.js, mobile layout)
+core.js           shared by both pages: Supabase, state, sign-in, actions, data loading,
+                  notifications, animations, and the views that look the same in both
+app.js            desktop header and views
+mobile.js         mobile header, bottom bar and views
+style.css         desktop styles
 mobile.css        mobile styles
 assets/           logo, icons, illustrations (webp + svg), notification sound
 assets/original/  unoptimised PNG originals, used only with ?heavy
@@ -62,7 +64,7 @@ supabase/schema.sql   full database schema, to restore it into a new project
 supabase/migrations/  database changes, in the order they were applied
 ```
 
-`app.js` and `mobile.js` share most of their logic, so a change to data or behaviour usually has to be made in both files.
+Both pages load `core.js` first and then their own file. Logic and data changes go into `core.js` once; `app.js` and `mobile.js` only decide how things look.
 
 ## Database
 
