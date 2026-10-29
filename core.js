@@ -60,7 +60,7 @@ document.body.insertAdjacentHTML('beforeend', `
 let S={projects:[],me:null,view:'landing',pid:null,op:null,tab:'new',ready:false};
 const F={skills:[],type:'All',novice:false,urgent:false,fit:false,hide:false,q:'',sort:'match'};
 const nR=()=>({skill:'',level:1,link:'',did:'',when:'Today',tg:''});
-const nC=()=>({title:'',type:'Hackathon',desc:'',sk:{},urgent:false,trial:'Quick chat',trialTask:'',trialDue:'',novice:true,n:1});
+const nC=()=>({title:'',type:'Hackathon',desc:'',sk:{},urgent:false,trial:'Quick chat',trialTask:'',trialDue:'',novice:true,n:1,links:[],files:[],old:[],del:[]});
 
 let R=nR(), C=nC(), G={name:'',email:'',pw:''}, RCV=false, tm, lastT=0;
 const P=()=>S.projects.find(p=>p.id===S.pid);
@@ -203,9 +203,17 @@ const A={
     edit:d=>{
         const p=S.projects.find(x=>x.id===d.id); if(!p||p.authorId!=='me') return;
         const sk={}; p.req.forEach(s=>sk[s]='req'); p.opt.forEach(s=>sk[s]='opt');
-        C={edit:p.id,title:p.title,type:p.type,desc:p.desc==='No description yet.'?'':p.desc,sk,urgent:p.urgent,trial:p.trial,trialTask:p.trialTask,trialDue:p.trialDue,due0:p.trialDue,novice:p.novice,n:p.n,sk0:p.req.concat(p.opt)};
+        const m=MAT[p.id], had=m&&m!=='loading';
+        C={edit:p.id,title:p.title,type:p.type,desc:p.desc==='No description yet.'?'':p.desc,sk,urgent:p.urgent,trial:p.trial,trialTask:p.trialTask,trialDue:p.trialDue,due0:p.trialDue,novice:p.novice,n:p.n,sk0:p.req.concat(p.opt),
+           links:p.links.map(l=>({url:l.url,label:l.label})),files:[],del:[],old:had?m.files.slice():[]};
         go('create');
+        if(!had) loadMat(p.id).then(()=>{ if(C.edit===p.id){ C.old=MAT[p.id].files.slice(); render(false); } });
     },
+    ladd:()=>{if(C.links.length<MAXL) C.links.push({url:'',label:''}); render(false)},
+    lrm:d=>{C.links.splice(+d.i,1); render(false)},
+    fpick:()=>{const i=$('#cfile'); if(i) i.click()},
+    fq:d=>{C.files.splice(+d.i,1); render(false)},
+    fdel:d=>{C.del.push(d.p); render(false)},
     cancelEdit:()=>{const id=C.edit; C=nC(); S.op=id; go('mine')},
     how:()=>{const e=$('#how'); e&&e.scrollIntoView({behavior:RM?'auto':'smooth'})},
     
@@ -397,16 +405,18 @@ const A={
         if(need()) return;
         const req=Object.keys(C.sk).filter(s=>C.sk[s]==='req'), opt=Object.keys(C.sk).filter(s=>C.sk[s]==='opt');
         if(cl(C.title,80).length<3||!req.length) return toast('Add a title (3+ characters) and at least one required skill');
-        if(C.edit) return saveEdit(req,opt);
+        const links=normLinks(); if(!links) return toast('Check the links: each must be a web address like https://github.com/…');
+        if(C.edit) return saveEdit(req,opt,links);
         if(!tok('pub')) return;
         if(C.trialDue&&!okDate(C.trialDue)) return toast('Trial deadline must be a real date, today or later');
         const due=C.trialDue?C.trialDue:null;
-        let r=await sb.from('projects').insert({author_id:S.me.uid,title:cl(C.title,80),project_type:TYDB[C.type],description:cl(C.desc,1000)||'No description yet.',urgent:C.urgent,beginner_friendly:C.novice,spots_needed:C.n,trial_format:C.trial,trial_task:cl(C.trialTask,300)||null,trial_due:due}).select('id').single();
+        let r=await sb.from('projects').insert({author_id:S.me.uid,title:cl(C.title,80),project_type:TYDB[C.type],description:cl(C.desc,1000)||'No description yet.',urgent:C.urgent,beginner_friendly:C.novice,spots_needed:C.n,trial_format:C.trial,trial_task:cl(C.trialTask,300)||null,trial_due:due,links}).select('id').single();
         if(r.error) return dberr(r.error);
         const id=r.data.id, rows=req.map(k=>({project_id:id,skill_id:SKID[k],is_required:true})).concat(opt.map(k=>({project_id:id,skill_id:SKID[k],is_required:false})));
         const r2=await sb.from('project_skills').insert(rows);
         if(r2.error){await sb.from('projects').delete().eq('id',id); return dberr(r2.error)}
-        S.op=id; S.tab='new'; C=nC(); await load(); toast('Project published'); go('mine');
+        const filesOk=!C.files.length||await syncFiles(id);
+        S.op=id; S.tab='new'; C=nC(); await load(); if(filesOk) toast('Project published'); go('mine');
     },
     manage:d=>{S.op=d.id; S.tab='new'; go('mine')},
     tab:d=>{S.tab=d.t; render(false)},
@@ -473,6 +483,7 @@ function bindK(t){
 document.addEventListener('input',e=>{
     const t=e.target;
     if(t.dataset.k) bindK(t);
+    if(t.dataset.l){ const[i,k]=t.dataset.l.split(':'); if(C.links[+i]) C.links[+i][k]=t.value; }
     if(t.dataset.pl!==undefined&&S.me){ S.me.skills[+t.dataset.pl].link=cl(t.value,300); queueLink(+t.dataset.pl); }
     if(t.id==='q'){ F.q=t.value; const g=$('#grid'); if(g) g.innerHTML=grid(); }
 });
@@ -490,6 +501,7 @@ document.addEventListener('keydown',e=>{
 
 document.addEventListener('change',e=>{
     const t=e.target, a=t.dataset&&t.dataset.c;
+    if(t.id==='cfile'){ const l=[...t.files]; t.value=''; addFiles(l).catch(x=>{console.error(x); toast('Could not read the file');}); return; }
     if(t.dataset&&t.dataset.k&&t.tagName==='SELECT') bindK(t);
     if(!a||!A[a]) return;
     Promise.resolve(A[a](t.dataset,t.value)).catch(x=>{console.error(x); toast('Something went wrong. Try again.');});
@@ -527,20 +539,102 @@ async function loadSkills(){
 
 // Find shows the newest PLIM open projects; your own and the ones you applied to are always loaded
 const PLIM=100;
-const PF='id,author_id,title,project_type,description,urgent,beginner_friendly,spots_needed,status,trial_format,trial_task,trial_due,created_at,author:profiles!projects_author_id_fkey(display_name,program_code,group_number),project_skills(is_required,skills(name))';
+const PF='id,author_id,title,project_type,description,urgent,beginner_friendly,spots_needed,status,trial_format,trial_task,trial_due,created_at,author:profiles!projects_author_id_fkey(display_name,program_code,group_number),project_skills(is_required,skills(name)),links';
+// Project materials: up to MAXL links (a column on projects) and MAXF files in the private
+// Storage bucket, stored as <project id>/<prefix>-<name>. Storage enforces the size and type limits too.
+const MAXL=5, MAXF=3, FMAX=3*1024*1024, BUCKET='project-files';
+const FT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation'};
+const ext=n=>(n.match(/\.([a-z0-9]+)$/i)||['',''])[1].toLowerCase();
+const ficon=n=>({pdf:'📄',docx:'📝',pptx:'📊'})[ext(n)]||'🖼️';
+const fsz=b=>b<1048576?Math.max(1,Math.round(b/1024))+' KB':(b/1048576).toFixed(1)+' MB';
+const linkLabel=u=>{try{const h=new URL(u).hostname.replace(/^www\./,'');return /github/.test(h)?'GitHub':/figma/.test(h)?'Figma':/^docs\.google/.test(h)?'Google Docs':/^drive\.google/.test(h)?'Google Drive':/notion/.test(h)?'Notion':/canva/.test(h)?'Canva':h.slice(0,40)}catch(e){return 'Link'}};
+// links from the form, cleaned; null if one of them is not a web address
+function normLinks(){
+    const out=[];
+    for(const x of C.links){
+        let u=cl(x.url,300); if(!u) continue;
+        if(!/^https?:\/\//i.test(u)) u='https://'+u;
+        try{ const q=new URL(u); if(!/^https?:$/.test(q.protocol)||!q.hostname.includes('.')) throw 0; }catch(e){ return null; }
+        out.push({label:cl(x.label,40)||linkLabel(u),url:u});
+    }
+    return out;
+}
+// photos are made smaller before upload: at most 1600 px, WebP (JPEG where the browser cannot write WebP)
+async function shrink(f){
+    if(!/^image\/(png|jpeg|webp)$/.test(f.type)) return f;
+    try{
+        const bmp=await createImageBitmap(f), k=Math.min(1,1600/Math.max(bmp.width,bmp.height)), c=document.createElement('canvas');
+        c.width=Math.round(bmp.width*k); c.height=Math.round(bmp.height*k); c.getContext('2d').drawImage(bmp,0,0,c.width,c.height);
+        for(const [type,e] of [['image/webp','webp'],['image/jpeg','jpg']]){
+            const b=await new Promise(r=>c.toBlob(r,type,0.82));
+            if(b&&b.type===type) return b.size<f.size?new File([b],f.name.replace(/\.[^.]+$/,'')+'.'+e,{type}):f;
+        }
+    }catch(e){}
+    return f;
+}
+const fcount=()=>C.old.length-C.del.length+C.files.length;
+async function addFiles(list){
+    for(let f of list){
+        if(fcount()>=MAXF) return toast(`At most ${MAXF} files per project`);
+        if(!FT[ext(f.name)]) { toast(f.name+': only PDF, images, Word or PowerPoint'); continue; }
+        f=await shrink(f);
+        if(f.size>FMAX) { toast(f.name+' is over 3 MB. Upload it to Google Drive and add a link instead'); continue; }
+        C.files.push({file:f,name:f.name,size:f.size,type:FT[ext(f.name)]});
+    }
+    render(false);
+}
+// apply the file changes from the form: removals first (they free slots), then uploads
+async function syncFiles(id){
+    if(C.del.length){ const r=await sb.storage.from(BUCKET).remove(C.del); if(r.error) return toast('Could not remove a file: '+r.error.message),false; }
+    for(const f of C.files){
+        const safe=f.name.normalize('NFKD').replace(/[^\w.\-]+/g,'_').slice(-80);
+        // re-wrapped with the type from the extension: browsers often leave .docx/.pptx untyped, which Storage would refuse
+        const r=await sb.storage.from(BUCKET).upload(`${id}/${Date.now().toString(36)}-${safe}`,new Blob([f.file],{type:f.type}),{contentType:f.type,upsert:false});
+        if(r.error) return toast('Could not upload '+f.name+': '+r.error.message),false;
+    }
+    delete MAT[id];
+    return true;
+}
+// files of a project with download links valid for an hour; MAT[id] = 'loading' | {files, at}
+const MAT={};
+async function loadMat(id){
+    MAT[id]='loading';
+    const r=await sb.storage.from(BUCKET).list(id,{limit:10,sortBy:{column:'created_at',order:'asc'}});
+    const files=r.error?[]:r.data.filter(o=>o.id).map(o=>({path:id+'/'+o.name,name:o.name.replace(/^[a-z0-9]+-/,''),size:(o.metadata||{}).size||0}));
+    if(files.length){ const u=await sb.storage.from(BUCKET).createSignedUrls(files.map(f=>f.path),3600); if(!u.error) u.data.forEach((x,i)=>files[i].url=x.signedUrl); }
+    MAT[id]={files,at:Date.now()};
+}
+// the Materials card on the project page
+const mats=p=>{
+    const m=MAT[p.id];
+    if(m===undefined||(m!=='loading'&&Date.now()-m.at>50*60000)) loadMat(p.id).then(()=>{ if(S.view==='detail'&&S.pid===p.id) render(false); });
+    const files=m&&m!=='loading'?m.files.filter(f=>f.url):[];
+    if(!p.links.length&&!files.length) return '';
+    return `<div class="card"><div class="lbl">Materials</div><div class="col mats">${p.links.map(l=>`<a class="mat" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(l.label)}</a>`).join('')}${files.map(f=>`<a class="mat" href="${esc(f.url)}" target="_blank" rel="noopener" download="${esc(f.name)}">${ficon(f.name)} ${esc(f.name)} <span class="mut">${fsz(f.size)}</span></a>`).join('')}</div></div>`;
+};
+// links and files in the project form
+const fileRow=(name,size,rm,note)=>`<div class="row frow"><span class="fn">${ficon(name)} ${esc(name)}</span><span class="mut">${fsz(size)}${note?' · '+note:''}</span><button class="ghost sm" ${rm} aria-label="Remove ${esc(name)}">✕</button></div>`;
+const matForm=()=>`<div class="col"><div class="lbl">Links <span class="mut">(${C.links.length}/${MAXL})</span></div>
+${C.links.map((x,i)=>`<div class="row lrow"><input class="fld" data-l="${i}:url" maxlength="300" inputmode="url" placeholder="https://github.com/…" value="${esc(x.url)}" aria-label="Link ${i+1} address"><input class="fld" data-l="${i}:label" maxlength="40" placeholder="Name (optional)" value="${esc(x.label)}" aria-label="Link ${i+1} name"><button class="ghost sm" data-a="lrm" data-i="${i}" aria-label="Remove link ${i+1}">✕</button></div>`).join('')}
+${C.links.length<MAXL?'<button class="lnk" data-a="ladd">+ Add a link</button>':''}</div>
+<div class="col"><div class="lbl">Files <span class="mut">(${fcount()}/${MAXF})</span></div><div class="mut">PDF, images, Word or PowerPoint, up to 3 MB each; photos are compressed automatically. Bigger files: put them on Google Drive and add a link.</div>
+${C.old.filter(f=>!C.del.includes(f.path)).map(f=>fileRow(f.name,f.size,`data-a="fdel" data-p="${esc(f.path)}"`)).join('')}${C.files.map((f,i)=>fileRow(f.name,f.size,`data-a="fq" data-i="${i}"`,'will be uploaded')).join('')}
+${fcount()<MAXF?'<button class="ghost sm" data-a="fpick">Attach a file</button><input id="cfile" type="file" accept=".pdf,.png,.jpg,.jpeg,.webp,.docx,.pptx" multiple hidden>':''}</div>`;
+
 // Save an edited project: its fields, then its skills (added or changed first, removed last,
 // so a failure never leaves the project without skills)
-async function saveEdit(req,opt){
+async function saveEdit(req,opt,links){
     if(!tok('cl')) return;
     if(C.trialDue&&C.trialDue!==C.due0&&!okDate(C.trialDue)) return toast('Trial deadline must be a real date, today or later');
     const id=C.edit;
-    let r=await sb.from('projects').update({title:cl(C.title,80),project_type:TYDB[C.type],description:cl(C.desc,1000)||'No description yet.',urgent:C.urgent,beginner_friendly:C.novice,spots_needed:C.n,trial_format:C.trial,trial_task:cl(C.trialTask,300)||null,trial_due:C.trialDue||null}).eq('id',id);
+    let r=await sb.from('projects').update({title:cl(C.title,80),project_type:TYDB[C.type],description:cl(C.desc,1000)||'No description yet.',urgent:C.urgent,beginner_friendly:C.novice,spots_needed:C.n,trial_format:C.trial,trial_task:cl(C.trialTask,300)||null,trial_due:C.trialDue||null,links}).eq('id',id);
     if(r.error) return dberr(r.error);
     const rows=req.map(k=>({project_id:id,skill_id:SKID[k],is_required:true})).concat(opt.map(k=>({project_id:id,skill_id:SKID[k],is_required:false})));
     r=await sb.from('project_skills').upsert(rows,{onConflict:'project_id,skill_id'});
     if(r.error) return dberr(r.error);
     const gone=C.sk0.filter(s=>!C.sk[s]).map(s=>SKID[s]).filter(Boolean);
     if(gone.length){ r=await sb.from('project_skills').delete().eq('project_id',id).in('skill_id',gone); if(r.error) return dberr(r.error); }
+    if(!await syncFiles(id)) return;
     C=nC(); S.op=id; await load(); toast('Changes saved'); go('mine');
 }
 
@@ -574,7 +668,7 @@ async function load(){
             const c=a.cand||{}, sk=(c.user_skills||[]).map(x=>({s:x.skills.name,level:Math.max(0,LVDB.indexOf(x.level)),link:x.link_url||''})), mk=sk.find(x=>all.includes(x.s))||sk[0]||{s:'',level:0,link:''};
             return{id:a.id,cid:a.candidate_id===uid?'me':a.candidate_id,name:((c.display_name||'')+' '+(c.last_name||'')).trim(),group:grp(c.program_code,c.group_number),skills:sk,skill:mk.s,level:mk.level,link:mk.link,did:a.note||'',when:AVR[c.availability]||'',tg:tg[a.candidate_id]||'',st:STR[a.status]||'new'};
         });
-        return{id:p.id,title:p.title,type:TYR[p.project_type],authorId:p.author_id===uid?'me':p.author_id,author:p.author?who(p.author.display_name,p.author.program_code,p.author.group_number):'',tg:tg[p.author_id]||'',desc:p.description||'',req,opt,urgent:p.urgent,novice:p.beginner_friendly,trial:p.trial_format||'Quick chat',n:p.spots_needed,status:p.status,trialTask:p.trial_task||'',trialDue:p.trial_due||'',offers};
+        return{id:p.id,title:p.title,type:TYR[p.project_type],authorId:p.author_id===uid?'me':p.author_id,author:p.author?who(p.author.display_name,p.author.program_code,p.author.group_number):'',tg:tg[p.author_id]||'',desc:p.description||'',req,opt,urgent:p.urgent,novice:p.beginner_friendly,trial:p.trial_format||'Quick chat',n:p.spots_needed,status:p.status,trialTask:p.trial_task||'',trialDue:p.trial_due||'',links:p.links||[],offers};
     });
 }
 

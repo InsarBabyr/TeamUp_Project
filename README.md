@@ -10,6 +10,7 @@ An author posts a project with the skills it needs. Other students apply from th
 
 - **University accounts only.** Registration accepts `@astanait.edu.kz` addresses, and the email is confirmed with a 6-digit code.
 - **Projects.** Post a project with a type, description, required and nice-to-have skills, urgency, "beginners welcome", the number of people needed and a trial format. Edit everything about it after publishing (title, description, skills, terms), mark it **Team assembled** when the team is complete (everyone who applied is notified), or close or reopen it at any time.
+- **Materials.** Up to 5 links (GitHub, Figma, Google Docs…) and 3 files (PDF, images, Word, PowerPoint, 3 MB each; photos are compressed in the browser) per project, shown on the project page to everyone who can see the project. Files live in a private Storage bucket and are downloaded through links that expire after an hour.
 - **Search.** Fuzzy search by title, description and skill, plus filters by type, skills, "beginners welcome" and "urgent", plus "Fits me" (you have a required skill) and "Hide applied".
 - **Fits you.** Skills from your profile are marked on every project, cards say how many of the required skills you have, and Find shows the best match first (or the newest, if you switch).
 - **Applications.** Apply with a skill, your level, a link to your work and a short note. Withdraw an application while it is under review or on trial.
@@ -28,6 +29,7 @@ An author posts a project with the skills it needs. Other students apply from th
 | Backend | [Supabase](https://supabase.com): PostgreSQL, Auth, Realtime |
 | Security | Row Level Security (RLS) policies on every table |
 | Email | Supabase Auth over Gmail SMTP |
+| Files | Supabase Storage (private bucket `project-files`) |
 | Bot protection | Cloudflare Turnstile (CAPTCHA) on sign-in, sign-up and emailed codes |
 | Dev server | [live-server](https://www.npmjs.com/package/live-server) |
 
@@ -105,4 +107,5 @@ These live in the Supabase dashboard, not in the code:
 - **Authentication → Emails → SMTP Settings:** custom SMTP (Gmail with an app password). Without it Supabase only emails the project's own team members.
 - **Authentication → Emails → Templates:** *Confirm signup* and *Reset Password* contain `{{ .Token }}` (a code, not a link). University mail runs on Microsoft 365, whose Safe Links opens links in emails first and can use up a one-time link before the student clicks it.
 - **Realtime:** the `notifications` table is in the `supabase_realtime` publication (migration 5).
+- **Storage:** the `project-files` bucket (3 MB per file, documents and images only) and its policies are created by migration 8; the free plan has 1 GB. Usage: **Storage → Usage**.
 - **Authentication → Attack Protection → CAPTCHA:** Cloudflare Turnstile with its secret key. The matching public site key is `TURNSTILE_SITEKEY` at the top of `core.js`; both must be set together, or every sign-in fails. The Turnstile widget's hostnames must include every address the site is opened from (for example `localhost`).

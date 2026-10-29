@@ -64,7 +64,7 @@ V.detail=()=>{
 <button class="btn" data-a="send">Apply</button></div>`;
     return `<div class="wrap"><div class="main col" style="gap:16px"><button class="ghost" style="align-self:flex-start" data-a="go" data-v="find">← All projects</button>
 <div class="card"><div class="top"><h1>${esc(p.title)}</h1>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${p.type} · ${esc(p.author)}</div><div style="line-height:1.5">${esc(p.desc)}</div></div>
-<div class="card"><div class="lbl">Skills needed</div><div class="row">${skl(p)}</div><div class="mut">Beginners welcome: ${p.novice?'yes':'no'} · People needed: ${p.n}</div></div>
+<div class="card"><div class="lbl">Skills needed</div><div class="row">${skl(p)}</div><div class="mut">Beginners welcome: ${p.novice?'yes':'no'} · People needed: ${p.n}</div></div>${mats(p)}
 <div class="card tbox"><div class="lbl">How the trial works</div><div style="font-size:14px;line-height:1.5">Format: ${esc(p.trial)}. You take a small independent piece of the project and the author decides who stays. Contacts open after acceptance.${p.trialTask?` Trial task: ${esc(p.trialTask)}${p.trialDue?', deadline '+esc(p.trialDue):''}.`:''}</div></div></div>${form}</div>`;
 };
 
@@ -72,7 +72,8 @@ V.create=()=>`<div class="wrap"><div class="main card"><h1>${C.edit?'Edit projec
 <div class="col"><label class="lbl" for="ct">Title</label><input id="ct" class="fld" data-k="C.title" maxlength="80" placeholder="What are we building" value="${esc(C.title)}"></div>
 <div class="col"><label class="lbl" for="cd">Description</label><textarea id="cd" class="fld" data-k="C.desc" maxlength="1000" placeholder="What needs to be done and by when">${esc(C.desc)}</textarea></div>
 <div class="col"><div class="lbl">Type</div><div class="row">${TY.map(t=>chip(t,C.type===t,`data-a="cty" data-t="${t}"`)).join('')}</div></div>
-<div class="col"><div class="lbl">Skills <span class="mut">(${Object.keys(C.sk).length}/${MAXPS})</span></div><div class="mut">Pick a skill from the list. Tap an added skill to switch between <b>Required</b> and <b>Nice to have</b>.</div>${skSel('csel','Add a skill…','csel',Object.keys(C.sk))}<div class="row">${Object.keys(C.sk).length?Object.keys(C.sk).map(s=>xchip(s+' ('+(C.sk[s]==='req'?'Required':'Nice to have')+')',C.sk[s],'data-a="csk"','data-a="cskx"',s)).join(''):'<span class="mut">No skills added yet.</span>'}</div></div></div>
+<div class="col"><div class="lbl">Skills <span class="mut">(${Object.keys(C.sk).length}/${MAXPS})</span></div><div class="mut">Pick a skill from the list. Tap an added skill to switch between <b>Required</b> and <b>Nice to have</b>.</div>${skSel('csel','Add a skill…','csel',Object.keys(C.sk))}<div class="row">${Object.keys(C.sk).length?Object.keys(C.sk).map(s=>xchip(s+' ('+(C.sk[s]==='req'?'Required':'Nice to have')+')',C.sk[s],'data-a="csk"','data-a="cskx"',s)).join(''):'<span class="mut">No skills added yet.</span>'}</div></div>
+${matForm()}</div>
 <div class="side card w380"><h3>Terms</h3>
 <div class="col"><div class="lbl">Urgency</div><div class="row">${chip('Not urgent',!C.urgent,'data-a="cu" data-u="0"')}${chip('Urgent',C.urgent,'data-a="cu" data-u="1"')}</div></div>
 <div class="col"><div class="lbl">Trial</div><div class="row">${TR.map(t=>chip(t,C.trial===t,`data-a="ctr" data-t="${t}"`)).join('')}</div></div>

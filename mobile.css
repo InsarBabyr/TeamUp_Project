@@ -160,3 +160,15 @@ img{max-width:100%;height:auto}
 
 /* project actions next to the title in My projects */
 .acts { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+/* project materials: links and files */
+.mats { gap: 8px; }
+.mat { display: inline-flex; align-items: center; gap: 8px; color: var(--ink); text-decoration: none; font-weight: 600; word-break: break-word; }
+.mat:hover { text-decoration: underline; }
+.mat .mut { font-weight: 400; font-size: 12px; }
+.lrow { flex-wrap: nowrap; gap: 8px; }
+.lrow .fld:first-child { flex: 2; min-width: 0; }
+.lrow .fld:nth-child(2) { flex: 1; min-width: 0; }
+.frow { justify-content: space-between; gap: 8px; flex-wrap: nowrap; }
+.frow .fn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 600px) { .lrow { flex-wrap: wrap; } .lrow .fld:first-child { flex-basis: 100%; } }
