@@ -193,3 +193,7 @@ img{max-width:100%;height:auto}
 .lrow .fld:nth-child(2) { flex: 1; min-width: 0; }
 .frow { justify-content: space-between; gap: 8px; flex-wrap: nowrap; }
 .frow .fn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* file and link icons in materials */
+.mat .ic, .frow .fn .ic { color: var(--lav2); }
+.frow .fn { display: inline-flex; align-items: center; gap: 8px; }

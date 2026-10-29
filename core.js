@@ -545,7 +545,7 @@ const PF='id,author_id,title,project_type,description,urgent,beginner_friendly,s
 const MAXL=5, MAXF=3, FMAX=3*1024*1024, BUCKET='project-files';
 const FT={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',docx:'application/vnd.openxmlformats-officedocument.wordprocessingml.document',pptx:'application/vnd.openxmlformats-officedocument.presentationml.presentation'};
 const ext=n=>(n.match(/\.([a-z0-9]+)$/i)||['',''])[1].toLowerCase();
-const ficon=n=>({pdf:'📄',docx:'📝',pptx:'📊'})[ext(n)]||'🖼️';
+const ficon=n=>ic(({pdf:'file',docx:'doc',pptx:'slides'})[ext(n)]||'image');
 const fsz=b=>b<1048576?Math.max(1,Math.round(b/1024))+' KB':(b/1048576).toFixed(1)+' MB';
 const linkLabel=u=>{try{const h=new URL(u).hostname.replace(/^www\./,'');return /github/.test(h)?'GitHub':/figma/.test(h)?'Figma':/^docs\.google/.test(h)?'Google Docs':/^drive\.google/.test(h)?'Google Drive':/notion/.test(h)?'Notion':/canva/.test(h)?'Canva':h.slice(0,40)}catch(e){return 'Link'}};
 // links from the form, cleaned; null if one of them is not a web address
@@ -610,10 +610,10 @@ const mats=p=>{
     if(m===undefined||(m!=='loading'&&Date.now()-m.at>50*60000)) loadMat(p.id).then(()=>{ if(S.view==='detail'&&S.pid===p.id) render(false); });
     const files=m&&m!=='loading'?m.files.filter(f=>f.url):[];
     if(!p.links.length&&!files.length) return '';
-    return `<div class="card"><div class="lbl">Materials</div><div class="col mats">${p.links.map(l=>`<a class="mat" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">🔗 ${esc(l.label)}</a>`).join('')}${files.map(f=>`<a class="mat" href="${esc(f.url)}" target="_blank" rel="noopener" download="${esc(f.name)}">${ficon(f.name)} ${esc(f.name)} <span class="mut">${fsz(f.size)}</span></a>`).join('')}</div></div>`;
+    return `<div class="card"><div class="lbl">Materials</div><div class="col mats">${p.links.map(l=>`<a class="mat" href="${esc(l.url)}" target="_blank" rel="noopener noreferrer">${ic('link')}${esc(l.label)}</a>`).join('')}${files.map(f=>`<a class="mat" href="${esc(f.url)}" target="_blank" rel="noopener" download="${esc(f.name)}">${ficon(f.name)}${esc(f.name)} <span class="mut">${fsz(f.size)}</span></a>`).join('')}</div></div>`;
 };
 // links and files in the project form
-const fileRow=(name,size,rm,note)=>`<div class="row frow"><span class="fn">${ficon(name)} ${esc(name)}</span><span class="mut">${fsz(size)}${note?' · '+note:''}</span><button class="ghost sm" ${rm} aria-label="Remove ${esc(name)}">✕</button></div>`;
+const fileRow=(name,size,rm,note)=>`<div class="row frow"><span class="fn">${ficon(name)}${esc(name)}</span><span class="mut">${fsz(size)}${note?' · '+note:''}</span><button class="ghost sm" ${rm} aria-label="Remove ${esc(name)}">✕</button></div>`;
 const matForm=()=>`<div class="col"><div class="lbl">Links <span class="mut">(${C.links.length}/${MAXL})</span></div>
 ${C.links.map((x,i)=>`<div class="row lrow"><input class="fld" data-l="${i}:url" maxlength="300" inputmode="url" placeholder="https://github.com/…" value="${esc(x.url)}" aria-label="Link ${i+1} address"><input class="fld" data-l="${i}:label" maxlength="40" placeholder="Name (optional)" value="${esc(x.label)}" aria-label="Link ${i+1} name"><button class="ghost sm" data-a="lrm" data-i="${i}" aria-label="Remove link ${i+1}">✕</button></div>`).join('')}
 ${C.links.length<MAXL?'<button class="lnk" data-a="ladd">+ Add a link</button>':''}</div>

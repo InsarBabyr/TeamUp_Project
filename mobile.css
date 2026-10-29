@@ -172,3 +172,7 @@ img{max-width:100%;height:auto}
 .frow { justify-content: space-between; gap: 8px; flex-wrap: nowrap; }
 .frow .fn { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 @media (max-width: 600px) { .lrow { flex-wrap: wrap; } .lrow .fld:first-child { flex-basis: 100%; } }
+
+/* file and link icons in materials */
+.mat .ic, .frow .fn .ic { color: var(--ink); }
+.frow .fn { display: inline-flex; align-items: center; gap: 8px; }
