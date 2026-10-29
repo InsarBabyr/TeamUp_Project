@@ -331,3 +331,13 @@ img{max-width:100%;height:auto}
 .nta { gap: 12px; flex-wrap: nowrap; }
 .snd2 { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; color: var(--mut); }
 .snd2 .ic { width: 15px; height: 15px; }
+
+/* "Most wanted skills" on Find */
+.dem h3 { font-size: 15px; }
+.dem-n { font-size: 12px; margin-top: -6px; }
+.demr { display: grid; grid-template-columns: minmax(0, 1fr) 70px 26px; align-items: center; gap: 8px; width: 100%; min-height: 32px; padding: 2px 4px; border: none; border-radius: 8px; background: none; color: var(--ink); font: inherit; font-size: 13px; text-align: left; cursor: pointer; }
+.demr:hover { background: var(--lav); }
+.dem-s { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.dem-b { height: 8px; border-radius: 4px; background: var(--ln); overflow: hidden; }
+.dem-b i { display: block; height: 100%; border-radius: 0 4px 4px 0; background: #2563EB; }
+.demr b { text-align: right; font-variant-numeric: tabular-nums; }

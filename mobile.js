@@ -45,6 +45,7 @@ ${F.open?`<div class="card"><div class="col"><div class="lbl">Skills</div>${skSe
 <div class="col"><div class="lbl">Type</div><div class="row">${['All',...TY].map(t=>chip(t,F.type===t,`data-a="ft" data-t="${t}"`)).join('')}</div></div>
 <div class="col"><div class="lbl">More</div><div class="row">${chip('Beginners welcome',F.novice,'data-a="fn"')}${chip('Urgent',F.urgent,'data-a="fu"')}${chip('Fits me',F.fit,'data-a="ffit"')}${chip('Hide applied',F.hide,'data-a="fhide"')}</div></div>
 <div class="mut">Filled: required skill. Dashed: nice to have.</div></div>`:''}
+${demandCard()}
 <div id="grid" class="grid">${grid()}</div></div>`;
 };
 

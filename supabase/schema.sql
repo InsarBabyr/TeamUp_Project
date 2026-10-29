@@ -4,7 +4,7 @@
 --
 -- Not in this file (they live in the dashboard): Auth settings, SMTP and email templates.
 -- See "Supabase settings the app relies on" in README.md.
--- Exported 2026-10-28, updated with migrations 6 to 8.
+-- Exported 2026-10-28, updated with migrations 6 to 9.
 
 begin;
 
@@ -467,6 +467,25 @@ grant update (read_at) on public.notifications to authenticated;
 alter publication supabase_realtime add table public.notifications;
 
 -- ============================================================
+-- Views
+-- ============================================================
+
+-- Most wanted skills: how many open projects need each skill (shown on the Find page).
+-- security_invoker keeps the projects RLS in force for the reader.
+create view public.skill_demand with (security_invoker = true) as
+select s.name as skill,
+       count(*) as projects,
+       count(*) filter (where ps.is_required) as required
+from public.project_skills ps
+join public.projects p on p.id = ps.project_id
+join public.skills s on s.id = ps.skill_id
+where p.status = 'open'
+group by s.name;
+
+revoke all on public.skill_demand from anon;
+grant select on public.skill_demand to authenticated;
+
+-- ============================================================
 -- Storage: project files
 -- ============================================================
 
@@ -618,7 +637,8 @@ insert into public.skills (id, name, category_id) overriding system value values
   (101, 'Mathematical Modelling', 8),
   (102, 'Blockchain Basics', 9),
   (103, 'Smart Contracts (Solidity)', 9),
-  (104, 'Web3 Development', 9);
+  (104, 'Web3 Development', 9),
+  (105, 'C++', 1);
 
 -- continue the id counters after the inserted rows
 select setval(pg_get_serial_sequence('public.skill_categories', 'id'), (select max(id) from public.skill_categories));

@@ -100,6 +100,7 @@ V.find=()=>{
                     </div>
                 `).join('<hr style="border:0;border-top:1px solid var(--ln);margin:12px 0;">') : '<div class="mut" style="font-size:12px;">No urgent projects right now</div>'}
             </div>
+            ${demandCard()}
             <div class="card" style="background:var(--bg); border:1px dashed var(--mut);">
                 <h3 style="margin-bottom:8px; font-size:14px;">How trials work</h3>
                 <div class="mut" style="font-size:12px;">The author gives a small independent task first. If it goes well, you are accepted and contacts open.</div>

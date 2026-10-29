@@ -15,3 +15,4 @@ Thumbs.db
 # ...but keep the schema and its migrations, they hold no user data
 !supabase/migrations/*.sql
 !supabase/schema.sql
+!docs/analysis/*.sql

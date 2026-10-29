@@ -133,6 +133,12 @@ function tok(n){
 
 // project status as shown to people
 const pst=s=>s==='assembled'?'Team assembled':s==='closed'?'Project closed':'Open';
+// "Most wanted skills" on Find: how many open projects need each skill; a click filters by it
+const demandCard=()=>{
+    if(!DEM.length) return '';
+    const max=Math.max(...DEM.map(d=>d.projects));
+    return `<div class="card dem"><h3>Most wanted skills</h3><div class="mut dem-n">Open projects that need each skill. Tap one to filter.</div>${DEM.map(d=>`<button class="demr" data-a="fdem" data-s="${esc(d.skill)}" aria-label="${esc(d.skill)}: ${d.projects} open projects. Filter by it"><span class="dem-s">${esc(d.skill)}</span><span class="dem-b" aria-hidden="true"><i style="width:${Math.round(d.projects/max*100)}%"></i></span><b>${d.projects}</b></button>`).join('')}</div>`;
+};
 // project type with its own shade of blue (colour only)
 const tpl=t=>`<span class="tp tp-${String(t||'').toLowerCase()}">${t}</span>`;
 const mine=p=>S.me&&p.authorId==='me';
@@ -267,6 +273,7 @@ const A={
     fsort:d=>{F.sort=d.s; render(false)},
     fclr:()=>{F.skills=[]; F.type='All'; F.novice=false; F.urgent=false; F.fit=false; F.hide=false; F.q=''; render(false)},
     ffit:()=>{F.fit=!F.fit; render(false)},
+    fdem:d=>{if(!F.skills.includes(d.s)) F.skills.push(d.s); render(false)},
     fhide:()=>{F.hide=!F.hide; render(false)},
     bell:()=>{NOPEN=!NOPEN; render(false)},
     nall:async()=>{
@@ -551,6 +558,7 @@ async function loadSkills(){
 
 // Find shows the newest PLIM open projects; your own and the ones you applied to are always loaded
 const PLIM=100;
+let DEM=[];
 const PF='id,author_id,title,project_type,description,urgent,beginner_friendly,spots_needed,status,trial_format,trial_task,trial_due,created_at,author:profiles!projects_author_id_fkey(display_name,program_code,group_number),project_skills(is_required,skills(name)),links';
 // Project materials: up to MAXL links (a column on projects) and MAXF files in the private
 // Storage bucket, stored as <project id>/<prefix>-<name>. Storage enforces the size and type limits too.
@@ -669,6 +677,9 @@ async function load(){
     const rows=pr.data.concat(mn.data,ex).sort((a,b)=>a.created_at<b.created_at?1:a.created_at>b.created_at?-1:0);
     S.more=pr.data.length===PLIM;
     await loadNotes();
+    // most wanted skills, from the skill_demand view (analysis question 1); none before migration 9
+    const dm=await sb.from('skill_demand').select('skill,projects,required').order('projects',{ascending:false}).order('skill').limit(5);
+    DEM=dm.error?[]:dm.data;
     
     const tg={}; ct.data.forEach(c=>tg[c.user_id]=c.telegram);
     
