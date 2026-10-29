@@ -192,10 +192,7 @@ img{max-width:100%;height:auto}
 .gstep b { display: block; font-size: 15px; }
 .gd { display: block; margin-top: 2px; font-size: 13px; line-height: 1.45; color: var(--mut); }
 .gstep:not(.on) .gd { display: none; }
-.gbar { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--ga); }
-.gstep.on .gbar { animation: gbar 3.6s linear forwards; }
-.paused .gstep.on .gbar, .gbox:hover .gstep.on .gbar, .gbox:focus-within .gstep.on .gbar { animation-play-state: paused; }
-@keyframes gbar { to { width: 100%; } }
+.gbar { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--ga); transition: width .1s linear; }
 .gplay { position: absolute; left: 20px; bottom: 16px; }
 .gsteps { padding-bottom: 44px; }
 
@@ -262,7 +259,7 @@ img{max-width:100%;height:auto}
   .gf.on .ty { width: auto; animation: none; }
   .gf.on .pop, .gf.on .mk-toast { opacity: 1; animation: none; transform: none; }
   .gf.on .mk-toast { transform: translate(-50%, 0); }
-  .gf.on .hl, .gstep.on .gbar, .gcur.click::after { animation: none; }
+  .gf.on .hl, .gcur.click::after { animation: none; }
 }
 /* guide on phones: smaller mock text, dark theme colors */
 @media (max-width: 600px) { .gscreen { font-size: 10px; } .mk-tab { font-size: 8.5px; padding: 2px 5px; } .mk-h { font-size: 12.5px; } .mk-chip, .mk-m, .mk-l, .mk-fit { font-size: 9px; } .mk-nav { gap: 3px; } .mk-tab { padding: 2px 4px; font-size: 8px; } .mk-logo { width: 16px; height: 10px; } }

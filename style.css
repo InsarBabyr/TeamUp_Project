@@ -213,10 +213,7 @@ img{max-width:100%;height:auto}
 .gstep b { display: block; font-size: 15px; }
 .gd { display: block; margin-top: 2px; font-size: 13px; line-height: 1.45; color: var(--mut); }
 .gstep:not(.on) .gd { display: none; }
-.gbar { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--ga); }
-.gstep.on .gbar { animation: gbar 3.6s linear forwards; }
-.paused .gstep.on .gbar, .gbox:hover .gstep.on .gbar, .gbox:focus-within .gstep.on .gbar { animation-play-state: paused; }
-@keyframes gbar { to { width: 100%; } }
+.gbar { position: absolute; left: 0; bottom: 0; height: 3px; width: 0; background: var(--ga); transition: width .1s linear; }
 .gplay { position: absolute; left: 20px; bottom: 16px; }
 .gsteps { padding-bottom: 44px; }
 
@@ -283,7 +280,7 @@ img{max-width:100%;height:auto}
   .gf.on .ty { width: auto; animation: none; }
   .gf.on .pop, .gf.on .mk-toast { opacity: 1; animation: none; transform: none; }
   .gf.on .mk-toast { transform: translate(-50%, 0); }
-  .gf.on .hl, .gstep.on .gbar, .gcur.click::after { animation: none; }
+  .gf.on .hl, .gcur.click::after { animation: none; }
 }
 .mk-chip .ic { width: 11px; height: 11px; vertical-align: -1px; }
 

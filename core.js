@@ -811,7 +811,7 @@ if(!RM) setInterval(()=>{
 
 // ---------- Animated how-to guide on the landing page ----------
 // Each guide is a few steps; each step has the explanation (h, d), a mock screen (v) and the element the cursor clicks (c, a selector in v).
-// Steps advance every GSTEP ms while the guide is on screen, not hovered and motion is allowed.
+// Steps advance every GSTEP ms of time the guide is playing and on screen; one timer drives both the step and its progress bar.
 const GSTEP=3600;
 const mk={
     nav:(on,badge)=>`<div class="mk-nav"><span class="mk-logo"></span><span class="mk-sp"></span>${['Find','My projects','Post','Applications','Me'].map(t=>`<span class="mk-tab${t===on?' on':''}" data-t="${t}">${t}</span>`).join('')}<span class="mk-bell">${ic('bell')}${badge?`<i>${badge}</i>`:''}</span></div>`,
@@ -847,14 +847,13 @@ const GD=[
   {h:'Accept and team up',d:'Accept the people you want: their Telegram opens. When the team is complete, mark it “Team assembled”.',c:'.mk-btn.hl',v:mk.nav('My projects')+`<div class="mk-body"><div class="mk-end">${mk.btn('Team assembled',1)}</div>${mk.card('Daniyar · SE-2401','Accepted','<span class="mk-m">Telegram: <b>@daniyar_dev</b></span>')}</div>${mk.toast('Team assembled. Everyone who applied was notified')}`}
  ]}
 ];
-const GS={g:0,s:0,play:!RM,hover:false,t:0};
+const GS={g:0,s:0,play:!RM,el:0,last:Date.now()};
 const guide=()=>{
     const g=GD[GS.g];
-    GS.t=Date.now();   // the step on screen gets its full time after every render
     return `<section class="sec" id="guide" aria-labelledby="guide-h"><h2 id="guide-h">How to use TeamUp</h2>
 <div class="gtabs" role="tablist">${GD.map((x,i)=>`<button role="tab" class="gtab${i===GS.g?' on':''}" aria-selected="${i===GS.g}" data-a="gtab" data-i="${i}">${x.t}</button>`).join('')}</div>
 <div class="gbox${GS.play?'':' paused'}">
-<ol class="gsteps">${g.s.map((s,i)=>`<li><button class="gstep${i===GS.s?' on':''}" data-a="gstep" data-i="${i}"${i===GS.s?' aria-current="step"':''}><span class="gnum">${i+1}</span><span><b>${s.h}</b><span class="gd">${s.d}</span></span><i class="gbar"></i></button></li>`).join('')}</ol>
+<ol class="gsteps">${g.s.map((s,i)=>`<li><button class="gstep${i===GS.s?' on':''}" data-a="gstep" data-i="${i}"${i===GS.s?' aria-current="step"':''}><span class="gnum">${i+1}</span><span><b>${s.h}</b><span class="gd">${s.d}</span></span><i class="gbar" style="width:0"></i></button></li>`).join('')}</ol>
 <div class="gscreen" aria-hidden="true">${g.s.map((s,i)=>`<div class="gf${i===GS.s?' on':''}">${s.v}</div>`).join('')}<span class="gcur">${ic('cursor')}</span></div>
 <button class="ghost sm gplay" data-a="gplay" aria-label="${GS.play?'Pause':'Play'} the guide">${GS.play?'❚❚ Pause':'▶ Play'}</button>
 </div></section>`;
@@ -862,9 +861,9 @@ const guide=()=>{
 // show step s of the current guide by switching classes, without re-rendering the page
 function gShow(s){
     const box=$('#guide'); if(!box) return;
-    GS.s=s; GS.t=Date.now();
+    GS.s=s; GS.el=0;
     const g=GD[GS.g];
-    box.querySelectorAll('.gstep').forEach((b,i)=>{ b.classList.remove('on'); b.removeAttribute('aria-current'); if(i===s){ void b.offsetWidth; b.classList.add('on'); b.setAttribute('aria-current','step'); } });
+    box.querySelectorAll('.gstep').forEach((b,i)=>{ b.classList.toggle('on',i===s); if(i===s) b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current'); const bar=b.querySelector('.gbar'); bar.style.transition='none'; bar.style.width='0'; });
     box.querySelectorAll('.gf').forEach((f,i)=>f.classList.toggle('on',i===s));
     const c=box.querySelector('.gcur'); c.classList.remove('click'); gPos(); setTimeout(()=>c.classList.add('click'),RM?0:750);
 }
@@ -876,20 +875,28 @@ function gPos(){
     const a=scr.getBoundingClientRect(), r=t.getBoundingClientRect();
     c.style.left=(r.left-a.left+Math.min(r.width*.6,r.width-6))+'px'; c.style.top=(r.top-a.top+r.height*.6)+'px';
 }
-const gRedraw=()=>{ const box=$('#guide'); if(box){ box.outerHTML=guide(); gShow(GS.s); } };
+// redraw the guide (tab or play/pause changed) keeping the time already spent on the step
+const gRedraw=()=>{
+    const box=$('#guide'); if(!box) return;
+    box.outerHTML=guide();
+    const bar=$('#guide .gstep.on .gbar'); if(bar) bar.style.width=Math.min(100,GS.el/GSTEP*100)+'%';
+    gPos(); const c=$('#guide .gcur'); if(c) c.classList.add('click');
+};
 Object.assign(A,{
-    gtab:d=>{GS.g=+d.i; GS.s=0; gRedraw();},
+    gtab:d=>{GS.g=+d.i; GS.s=0; GS.el=0; gRedraw();},
     gstep:d=>{gShow(+d.i);},
     gplay:()=>{GS.play=!GS.play; gRedraw();}
 });
-addEventListener('mouseover',e=>{GS.hover=!!(e.target.closest&&e.target.closest('.gbox'))});
-addEventListener('focusin',e=>{GS.hover=!!(e.target.closest&&e.target.closest('.gbox'))});
 setInterval(()=>{
+    const now=Date.now(), dt=now-GS.last; GS.last=now;
     const box=$('#guide'); if(!box) return;
     gPos();
-    if(!GS.play||GS.hover||document.hidden) return;
-    const r=box.getBoundingClientRect(); if(r.bottom<0||r.top>innerHeight) return;
-    if(Date.now()-GS.t<GSTEP) return;
+    const r=box.getBoundingClientRect();
+    if(!GS.play||document.hidden||r.bottom<0||r.top>innerHeight) return;
+    GS.el+=Math.min(dt,500);
+    const bar=box.querySelector('.gstep.on .gbar');
+    if(bar){ bar.style.transition=''; bar.style.width=Math.min(100,GS.el/GSTEP*100)+'%'; }
+    if(GS.el<GSTEP) return;
     const n=GD[GS.g].s.length;
-    if(GS.s+1<n) gShow(GS.s+1); else { GS.g=(GS.g+1)%GD.length; GS.s=0; gRedraw(); }
-},250);
+    if(GS.s+1<n) gShow(GS.s+1); else { GS.g=(GS.g+1)%GD.length; GS.s=0; GS.el=0; gRedraw(); }
+},100);
