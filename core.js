@@ -134,11 +134,13 @@ function tok(n){
 
 // project status as shown to people
 const pst=s=>s==='assembled'?'Team assembled':s==='closed'?'Project closed':'Open';
+// project type with its own shade of blue (colour only)
+const tpl=t=>`<span class="tp tp-${String(t||'').toLowerCase()}">${t}</span>`;
 const mine=p=>S.me&&p.authorId==='me';
 const applied=p=>p.offers.some(o=>o.cid==='me');
 const vis=()=>S.projects.filter(p=>p.authorId!=='me'&&p.status==='open'&&(!F.skills.length||F.skills.every(s=>p.req.includes(s)||p.opt.includes(s)))&&(F.type==='All'||p.type===F.type)&&(!F.novice||p.novice)&&(!F.urgent||p.urgent)&&(!F.fit||fit(p).req>0)&&(!F.hide||!applied(p))&&(!F.q||sc(p)>=0)).sort((a,b)=>F.q?sc(b)-sc(a):F.sort==='match'?fitScore(b)-fitScore(a):0);
 
-const card=p=>`<article class="card" data-a="open" data-id="${p.id}"><div class="top"><h3>${esc(p.title)}</h3>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${p.type} · ${esc(p.author)}</div>${p.desc?`<p class="dsc">${esc(p.desc.slice(0,140))}${p.desc.length>140?'…':''}</p>`:''}<div class="row">${skl(p)}</div>${fitTag(p)}<div class="foot"><span class="mut">${p.n} needed${p.novice?' · beginners welcome':''}</span><button class="btn sm" data-a="open" data-id="${p.id}">${applied(p)?'Applied':'Apply'}</button></div></article>`;
+const card=p=>`<article class="card" data-a="open" data-id="${p.id}"><div class="top"><h3>${esc(p.title)}</h3>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${tpl(p.type)} · ${esc(p.author)}</div>${p.desc?`<p class="dsc">${esc(p.desc.slice(0,140))}${p.desc.length>140?'…':''}</p>`:''}<div class="row">${skl(p)}</div>${fitTag(p)}<div class="foot"><span class="mut">${p.n} needed${p.novice?' · beginners welcome':''}</span><button class="btn sm" data-a="open" data-id="${p.id}">${applied(p)?'Applied':'Apply'}</button></div></article>`;
 
 const grid=()=>{
     if(!S.ready) return '<div class="card">Loading projects…</div>';
@@ -164,7 +166,7 @@ ${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}$
 V.apps=()=>{
     const L=[];
     S.projects.forEach(p=>p.offers.filter(o=>o.cid==='me').forEach(o=>L.push([p,o])));
-    return `<div class="wrap"><div class="main col" style="gap:16px"><h1>My applications</h1>${L.length?L.map(([p,o])=>`<div class="card"><div class="top"><h3>${esc(p.title)}</h3><span class="chip ${o.st==='team'||o.st==='trial'?'on':''}">${STT[o.st]}</span></div><div class="mut">${p.type} · ${esc(p.author)}${p.status==='open'?'':' · '+pst(p.status)}</div><div class="row"><span class="chip req">${esc(o.skill)} · ${LV[o.level]}</span></div>${o.st==='team'?`<div class="mut">Author's Telegram: <b>${esc(p.tg||'not provided')}</b></div>`:'<div class="mut">The author\'s contact opens once you are accepted.</div>'}${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}<div class="row"><button class="ghost" data-a="open" data-id="${p.id}">View project</button>${o.st==='new'||o.st==='trial'?`<button class="ghost" data-a="wd" data-o="${o.id}">Withdraw</button>`:''}</div></div>`).join(''):'<div class="card">You have not applied yet.<button class="btn" data-a="go" data-v="find">Find projects</button></div>'}</div></div>`;
+    return `<div class="wrap"><div class="main col" style="gap:16px"><h1>My applications</h1>${L.length?L.map(([p,o])=>`<div class="card"><div class="top"><h3>${esc(p.title)}</h3><span class="chip st st-${o.st}">${STT[o.st]}</span></div><div class="mut">${tpl(p.type)} · ${esc(p.author)}${p.status==='open'?'':' · '+pst(p.status)}</div><div class="row"><span class="chip req">${esc(o.skill)} · ${LV[o.level]}</span></div>${o.st==='team'?`<div class="mut">Author's Telegram: <b>${esc(p.tg||'not provided')}</b></div>`:'<div class="mut">The author\'s contact opens once you are accepted.</div>'}${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}<div class="row"><button class="ghost" data-a="open" data-id="${p.id}">View project</button>${o.st==='new'||o.st==='trial'?`<button class="ghost" data-a="wd" data-o="${o.id}">Withdraw</button>`:''}</div></div>`).join(''):'<div class="card">You have not applied yet.<button class="btn" data-a="go" data-v="find">Find projects</button></div>'}</div></div>`;
 };
 
 const gated=['find','detail','mine','manage','apps','profile','create'];
@@ -850,7 +852,7 @@ const GD=[
 const GS={g:0,s:0,play:!RM,el:0,last:Date.now()};
 const guide=()=>{
     const g=GD[GS.g];
-    return `<section class="sec" id="guide" aria-labelledby="guide-h"><h2 id="guide-h">How to use TeamUp</h2>
+    return `<section class="sec" id="guide" data-g="${GS.g}" aria-labelledby="guide-h"><h2 id="guide-h">How to use TeamUp</h2>
 <div class="gtabs" role="tablist">${GD.map((x,i)=>`<button role="tab" class="gtab${i===GS.g?' on':''}" aria-selected="${i===GS.g}" data-a="gtab" data-i="${i}">${x.t}</button>`).join('')}</div>
 <div class="gbox${GS.play?'':' paused'}">
 <ol class="gsteps">${g.s.map((s,i)=>`<li><button class="gstep${i===GS.s?' on':''}" data-a="gstep" data-i="${i}"${i===GS.s?' aria-current="step"':''}><span class="gnum">${i+1}</span><span><b>${s.h}</b><span class="gd">${s.d}</span></span><i class="gbar" style="width:0"></i></button></li>`).join('')}</ol>

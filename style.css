@@ -287,3 +287,37 @@ img{max-width:100%;height:auto}
 
 /* rotating hero word: its own line, never wraps (size fitted in core.js) */
 #rw { white-space: nowrap; }
+
+/* ---------- Palette: shades of blue, sky and indigo on white (colours only, no layout) ---------- */
+:root { --navy: #1E3A8A; --sky: #38BDF8; --sky-d: #0369A1; --sky-s: #E0F2FE; --ind: #4F46E5; --ind-d: #4338CA; --ind-s: #EEF2FF; }
+.lh { background: linear-gradient(120deg, #2563EB 0%, #3B4FE4 55%, #4F46E5 100%); }
+.blob[data-c="1"] { background: #38BDF8; }
+.blob[data-c="2"] { background: #FFFFFF; }
+.blob[data-c="3"] { background: #A5B4FC; }
+.lh .hl { background: #38BDF8; color: #0B1B3F; }
+.mq { background: var(--navy); border-color: var(--navy); }
+.mq span:nth-child(4n+2) { color: #7DD3FC; }
+.mq span:nth-child(4n) { color: #A5B4FC; }
+#how .card { box-shadow: inset 0 3px 0 #2563EB; }
+#how .card:nth-child(2) { box-shadow: inset 0 3px 0 #0EA5E9; }
+#how .card:nth-child(3) { box-shadow: inset 0 3px 0 #4F46E5; }
+#how .card:nth-child(1) .num { background: #DBEAFE; color: #1D4ED8; }
+#how .card:nth-child(2) .num { background: var(--sky-s); color: var(--sky-d); }
+#how .card:nth-child(3) .num { background: var(--ind-s); color: var(--ind-d); }
+.role-a { background: linear-gradient(135deg, #2563EB, #1D4ED8); color: #fff; }
+.role-c { background: linear-gradient(135deg, #4F46E5, #4338CA); color: #fff; }
+.cta { background: linear-gradient(120deg, #1E3A8A 0%, #312E81 100%); }
+/* project types, each a shade of blue */
+.tp-hackathon { color: #4F46E5; } .tp-thesis { color: #1E40AF; } .tp-research { color: #0369A1; } .tp-startup { color: #2563EB; } .tp-coursework { color: #0E7490; }
+/* application statuses: meaning, not decoration */
+.chip.st { border-color: transparent; }
+.st-trial, .st-team { font-weight: 600; }  /* as before: the two "active" statuses were bold */
+.st-new { background: #F1F5F9; color: #334155; }
+.st-trial { background: #EEF2FF; color: #4338CA; }
+.st-team { background: #DCFCE7; color: #166534; }
+.st-reserve { background: #F8FAFC; color: #64748B; }
+.role-a .pill, .role-c .pill { background: #FFFFFF; }  /* the label stays readable on the blue cards */
+/* the how-to guide: each tab its own shade */
+#guide[data-g="1"] { --ga: #0284C7; }
+#guide[data-g="2"] { --ga: #4F46E5; }
+#guide[data-g="3"] { --ga: #1E40AF; }

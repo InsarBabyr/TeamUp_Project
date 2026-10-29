@@ -30,7 +30,7 @@ const words=['startup','hackathon','research paper','thesis','course project'];
 V.landing=()=>{
     const cta=S.me?`<button class="btn xl" style="background:var(--ink);color:var(--po);" data-a="go" data-v="create">Create a project</button><button class="ghost xl" style="background:var(--card);color:var(--ink);border:none;" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" style="background:var(--ink);color:var(--po);" data-a="openAuth">Sign In / Register</button><button class="ghost xl" style="background:var(--card);color:var(--ink);border:none;" data-a="go" data-v="find">Browse projects</button>`;
     const mq=['Python','SQL','Figma','React','JavaScript','Docker','Power BI / Tableau','Excel','User Research','Machine Learning','Data Analysis','UI/UX Design'].map(s=>`<span>${s}</span>`).join('<span>✦</span>');
-    return `<section class="lh"><i class="blob" data-d="40" style="width:260px;height:260px;right:6%;top:-70px;background:var(--mint)"></i><i class="blob" data-d="-28" style="width:150px;height:150px;right:30%;bottom:-50px;background:var(--po)"></i><i class="blob" data-d="20" style="width:90px;height:90px;left:52%;top:40px;background:var(--pea)"></i>
+    return `<section class="lh"><i class="blob" data-d="40" style="width:260px;height:260px;right:6%;top:-70px" data-c="1"></i><i class="blob" data-d="-28" style="width:150px;height:150px;right:30%;bottom:-50px" data-c="2"></i><i class="blob" data-d="20" style="width:90px;height:90px;left:52%;top:40px" data-c="3"></i>
 <div class="in"><h1 class="big">Your next<br><span id="rw" class="hl">${words[0]}</span><br>needs a team.</h1><p style="font-size: 18px; max-width: 620px; line-height: 1.5;">TeamUp finds people by what they can actually do, not by who you happen to know. Sign in with your university email, publish a project or join one in a click.</p><div class="row" style="margin-top:8px">${cta}</div>${HERO()}</div></section>
 <div class="mq" aria-hidden="true"><div>${mq}<span>✦</span>${mq}<span>✦</span></div></div>
 <section class="sec" id="how"><h2>Three steps to a team</h2><div class="g3">
@@ -39,8 +39,8 @@ V.landing=()=>{
 <div class="card">${IMG3()}<div class="num">3</div><h3>Try, then team up</h3><div class="mut">Authors give a small trial task first. Contacts open only after acceptance.</div></div></div></section>
 ${guide()}
 <section class="sec"><h2>One account. Two roles.</h2><div class="g3">
-<div class="card" style="background:var(--lav2);color:var(--po)"><span class="pill" style="align-self:flex-start;color:var(--ink)">Author</span><h3>You post a project</h3><div>Publish your thesis, research or hackathon idea, review applicants, accept to a trial, build the team.</div></div>
-<div class="card" style="background:#1D4ED8;color:#fff"><span class="pill" style="align-self:flex-start;color:var(--ink)">Candidate</span><h3>You join someone else's</h3><div>Apply to other students' projects from the same profile. You can be both at once, but never apply to your own.</div></div></div></section>
+<div class="card role-a"><span class="pill" style="align-self:flex-start;color:var(--ink)">Author</span><h3>You post a project</h3><div>Publish your thesis, research or hackathon idea, review applicants, accept to a trial, build the team.</div></div>
+<div class="card role-c"><span class="pill" style="align-self:flex-start;color:var(--ink)">Candidate</span><h3>You join someone else's</h3><div>Apply to other students' projects from the same profile. You can be both at once, but never apply to your own.</div></div></div></section>
 <section class="sec"><div class="cta" style="align-items:center; text-align:center;"><h2>Stop asking in group chats.</h2><div style="max-width:560px;line-height:1.5; font-size:16px;">Find the person with the skill you need in minutes.</div><div class="row">${S.me?`<button class="btn xl" style="background:var(--card);color:var(--ink);" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" style="background:var(--card);color:var(--ink);" data-a="openAuth">Sign in with university email</button>`}</div></div></section>
 <footer class="ft">TeamUp · student team finder · prototype. All data in the database is synthetic test data.</footer>`;
 };
@@ -94,7 +94,7 @@ V.find=()=>{
                 ${urgList.length ? urgList.map(p=>`
                     <div style="cursor:pointer; margin-bottom:12px;" data-a="open" data-id="${p.id}">
                         <div style="font-weight:700; font-size:13px; color:var(--ink);">${esc(p.title)}</div>
-                        <div class="mut" style="font-size:12px; margin-top:2px;">${p.type} · ${p.n} needed</div>
+                        <div class="mut" style="font-size:12px; margin-top:2px;">${tpl(p.type)} · ${p.n} needed</div>
                     </div>
                 `).join('<hr style="border:0;border-top:1px solid var(--ln);margin:12px 0;">') : '<div class="mut" style="font-size:12px;">No urgent projects right now</div>'}
             </div>
@@ -124,7 +124,7 @@ V.detail=()=>{
 <div class="col"><label class="lbl" for="rt">Telegram</label><input id="rt" class="fld" data-k="R.tg" maxlength="33" placeholder="@username" value="${esc(R.tg)}"><span class="mut">The author sees it only after accepting you.</span></div>
 <button class="btn" data-a="send">Apply</button></div>`;
     return `<div class="wrap"><div class="main col" style="gap:16px"><button class="ghost" style="align-self:flex-start; border:none; background:transparent; padding-left:0; color:var(--mut);" data-a="go" data-v="find">← Back to projects</button>
-<div class="card"><div class="top"><h1>${esc(p.title)}</h1>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${p.type} · ${esc(p.author)}</div><div style="line-height:1.5">${esc(p.desc)}</div></div>
+<div class="card"><div class="top"><h1>${esc(p.title)}</h1>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${tpl(p.type)} · ${esc(p.author)}</div><div style="line-height:1.5">${esc(p.desc)}</div></div>
 <div class="card"><div class="lbl">Skills needed</div><div class="row">${skl(p)}</div><div class="mut">Beginners welcome: ${p.novice?'yes':'no'} · People needed: ${p.n}</div></div>${mats(p)}
 <div class="card" style="background:var(--lav); border-color:var(--lav2);"><div class="lbl" style="color:var(--lav2)">How the trial works</div><div style="font-size:14px;line-height:1.5; color:var(--ink)">Format: ${esc(p.trial)}. You take a small independent piece of the project and the author decides who stays. Contacts open after acceptance.${p.trialTask?` Trial task: ${esc(p.trialTask)}${p.trialDue?', deadline '+esc(p.trialDue):''}.`:''}</div></div></div>${form}</div>`;
 };

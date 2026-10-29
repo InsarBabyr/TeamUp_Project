@@ -15,7 +15,7 @@ const words=['thesis','hackathon','research paper','startup','course project'];
 V.landing=()=>{
     const cta=S.me?`<button class="btn xl" data-a="go" data-v="create">Create a project</button><button class="ghost xl" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" data-a="openAuth">Sign In / Register</button><button class="ghost xl" data-a="go" data-v="find">Browse projects</button>`;
     const mq=['Python','SQL','Figma','React','JavaScript','Docker','Power BI / Tableau','Excel','User Research','Machine Learning','Data Analysis','UI/UX Design'].map(s=>`<span>${s}</span>`).join('<span>✦</span>');
-    return `<section class="lh"><i class="blob" data-d="40" style="width:260px;height:260px;right:6%;top:-70px;background:var(--mint)"></i><i class="blob" data-d="-28" style="width:150px;height:150px;right:30%;bottom:-50px;background:var(--but)"></i><i class="blob" data-d="20" style="width:90px;height:90px;left:52%;top:40px;background:var(--pea)"></i>
+    return `<section class="lh"><i class="blob" data-d="40" style="width:260px;height:260px;right:6%;top:-70px" data-c="1"></i><i class="blob" data-d="-28" style="width:150px;height:150px;right:30%;bottom:-50px" data-c="2"></i><i class="blob" data-d="20" style="width:90px;height:90px;left:52%;top:40px" data-c="3"></i>
 <span class="fl" style="top:16%;right:10%">Python</span><span class="fl" style="top:38%;right:24%">Figma</span><span class="fl" style="top:62%;right:8%">✓ Link provided</span><span class="fl" style="top:76%;right:30%">Hackathon</span><span class="fl" style="top:10%;right:34%">SQL</span>
 <div class="in"><span class="pill">For AITU students</span><h1 class="big">Your next<br><span id="rw" class="hl">${words[0]}</span><br>needs a team.</h1><p>TeamUp finds people by what they can actually do, not by who you happen to know. Sign in with your university email, publish a project or join one in a click.</p><div class="row">${cta}</div>${HERO()}</div></section>
 <div class="mq" aria-hidden="true"><div>${mq}<span>✦</span>${mq}<span>✦</span></div></div>
@@ -25,8 +25,8 @@ V.landing=()=>{
 <div class="card">${IMG3()}<div class="num">3</div><h3>Try, then team up</h3><div class="mut">Authors give a small trial task first. Contacts open only after acceptance.</div></div></div></section>
 ${guide()}
 <section class="sec rv"><h2>One account. Two roles.</h2><div class="g3">
-<div class="card" style="background:var(--lav);color:var(--po)"><span class="pill" style="align-self:flex-start">Author</span><h3>You post a project</h3><div>Publish your thesis, research or hackathon idea, review applicants, accept to a trial, build the team.</div></div>
-<div class="card" style="background:var(--mint);color:var(--po)"><span class="pill" style="align-self:flex-start">Candidate</span><h3>You join someone else's</h3><div>Apply to other students' projects from the same profile. You can be both at once, but never apply to your own.</div></div></div></section>
+<div class="card role-a"><span class="pill" style="align-self:flex-start">Author</span><h3>You post a project</h3><div>Publish your thesis, research or hackathon idea, review applicants, accept to a trial, build the team.</div></div>
+<div class="card role-c"><span class="pill" style="align-self:flex-start">Candidate</span><h3>You join someone else's</h3><div>Apply to other students' projects from the same profile. You can be both at once, but never apply to your own.</div></div></div></section>
 <section class="sec rv"><h2>Skills you can trust</h2><div class="g3">
 <div class="card"><h3>Levels, not checkboxes</h3><div class="mut">Learning, coursework or real project. Honest beginners are welcome.</div></div>
 <div class="card"><h3>Proof links</h3><div class="mut">Skills with a link to real work get a “Link provided” mark.</div></div>
@@ -64,7 +64,7 @@ V.detail=()=>{
 <div class="col"><label class="lbl" for="rt">Telegram</label><input id="rt" class="fld" data-k="R.tg" maxlength="33" placeholder="@username" value="${esc(R.tg)}"><span class="mut">The author sees it only after accepting you.</span></div>
 <button class="btn" data-a="send">Apply</button></div>`;
     return `<div class="wrap"><div class="main col" style="gap:16px"><button class="ghost" style="align-self:flex-start" data-a="go" data-v="find">← All projects</button>
-<div class="card"><div class="top"><h1>${esc(p.title)}</h1>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${p.type} · ${esc(p.author)}</div><div style="line-height:1.5">${esc(p.desc)}</div></div>
+<div class="card"><div class="top"><h1>${esc(p.title)}</h1>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${tpl(p.type)} · ${esc(p.author)}</div><div style="line-height:1.5">${esc(p.desc)}</div></div>
 <div class="card"><div class="lbl">Skills needed</div><div class="row">${skl(p)}</div><div class="mut">Beginners welcome: ${p.novice?'yes':'no'} · People needed: ${p.n}</div></div>${mats(p)}
 <div class="card tbox"><div class="lbl">How the trial works</div><div style="font-size:14px;line-height:1.5">Format: ${esc(p.trial)}. You take a small independent piece of the project and the author decides who stays. Contacts open after acceptance.${p.trialTask?` Trial task: ${esc(p.trialTask)}${p.trialDue?', deadline '+esc(p.trialDue):''}.`:''}</div></div></div>${form}</div>`;
 };
