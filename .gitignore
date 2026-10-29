@@ -16,3 +16,4 @@ Thumbs.db
 !supabase/migrations/*.sql
 !supabase/schema.sql
 !docs/analysis/*.sql
+!docs/testing/*.sql
