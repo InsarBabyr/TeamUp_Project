@@ -180,24 +180,35 @@ const go=(v,top=true)=>{
 const need=()=>{if(S.me)return false; toast('Sign in with your university email first'); A.openAuth(); return true;};
 
 // CAPTCHA for sign-in, sign-up and the emails Supabase sends; each token works once
-let capId=null;
+let capId=null, capTok='', capErr='';
 function capRender(){
     if(!TURNSTILE_SITEKEY||capId!==null||!window.turnstile) return;
-    capId=turnstile.render('#captcha',{sitekey:TURNSTILE_SITEKEY,appearance:'interaction-only',size:'flexible'});
+    capId=turnstile.render('#captcha',{sitekey:TURNSTILE_SITEKEY,appearance:'interaction-only',size:'flexible',
+        callback:t=>{capTok=t; capErr='';},
+        'expired-callback':()=>{capTok='';},
+        'timeout-callback':()=>{capTok='';},
+        'error-callback':c=>{capTok=''; capErr=String(c||'unknown'); return true;}});
 }
-// resolves to a token, undefined when CAPTCHA is off, or null if the check did not finish in 10 s
+// resolves to a token, undefined when CAPTCHA is off, or null when there is none (the reason is shown).
+// Waits up to a minute: Cloudflare sometimes asks for a click on the check above the button.
 async function capToken(){
     if(!TURNSTILE_SITEKEY) return undefined;
-    for(let i=0;i<40;i++){
+    for(let i=0;i<240;i++){
         capRender();
-        const t=capId!==null&&turnstile.getResponse(capId);
-        if(t) return t;
+        if(capTok) return capTok;
+        if(capErr){
+            const e=capErr; capErr=''; if(capId!==null) turnstile.reset(capId);
+            toast(/^1102/.test(e)?`Security check error ${e}: this address is not allowed for the check. Open the site via localhost or its public address.`:`Security check error ${e}. Reload the page and try again.`);
+            return null;
+        }
+        if(!window.turnstile&&i>=24) break;   // the script normally loads in a second or two: after 6 s it is blocked
+        if(i===8) toast(window.turnstile?'Complete the security check above the button':'The security check is still loading…');
         await new Promise(r=>setTimeout(r,250));
     }
-    toast('The security check did not finish. Reload the page and try again.');
+    toast(window.turnstile?'The security check was not completed. Try again.':'The security check could not load: something (an ad blocker, a VPN or the network) blocks challenges.cloudflare.com. Allow it and reload the page.');
     return null;
 }
-const capReset=()=>{ if(capId!==null&&window.turnstile) turnstile.reset(capId); };
+const capReset=()=>{ capTok=''; if(capId!==null&&window.turnstile) turnstile.reset(capId); };
 
 const A={
     go:d=>{if(d.id)S.op=d.id; if(d.v==='create'&&C.edit) C=nC(); go(d.v)},
