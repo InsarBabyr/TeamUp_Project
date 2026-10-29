@@ -814,7 +814,7 @@ if(!RM) setInterval(()=>{
 // Steps advance every GSTEP ms of time the guide is playing and on screen; one timer drives both the step and its progress bar.
 const GSTEP=3600;
 const mk={
-    nav:(on,badge)=>`<div class="mk-nav"><span class="mk-logo"></span><span class="mk-sp"></span>${['Find','My projects','Post','Applications','Me'].map(t=>`<span class="mk-tab${t===on?' on':''}" data-t="${t}">${t}</span>`).join('')}<span class="mk-bell">${ic('bell')}${badge?`<i>${badge}</i>`:''}</span></div>`,
+    nav:(on,badge)=>`<div class="mk-nav"><span class="mk-brand"><img class="mk-logo" src="assets/logo.svg" alt="" width="34" height="24">TeamUp</span><span class="mk-sp"></span>${['Find','My projects','Post','Applications','Me'].map(t=>`<span class="mk-tab${t===on?' on':''}" data-t="${t}">${t}</span>`).join('')}<span class="mk-bell">${ic('bell')}${badge?`<i>${badge}</i>`:''}</span></div>`,
     field:(l,v,type)=>`<div class="mk-f"><span class="mk-l">${l}</span><span class="mk-in">${type?`<span class="ty" style="--n:${v.length}">${v}</span>`:v}</span></div>`,
     chips:(a,cls='')=>`<div class="mk-row">${a.map(x=>`<span class="mk-chip ${cls}">${x}</span>`).join('')}</div>`,
     btn:(t,hl)=>`<span class="mk-btn${hl?' hl':''}">${t}</span>`,
