@@ -787,6 +787,20 @@ function pop(x,y){
     }
 }
 let wi=0;
+// The rotating word has its own line and never wraps; one font size, fitted to the longest word,
+// keeps the heading the same height for every word, so the page does not jump.
+function fitRw(){
+    const e=$('#rw'); if(!e) return;
+    const cur=e.textContent, box=e.parentElement.clientWidth;
+    e.style.fontSize='';
+    let widest=0;
+    for(const w of words){ e.textContent=w; widest=Math.max(widest,e.offsetWidth); }
+    e.textContent=cur;
+    if(widest>box) e.style.fontSize=(parseFloat(getComputedStyle(e).fontSize)*box/widest*0.98)+'px';
+}
+addEventListener('resize',fitRw);
+if(document.fonts) document.fonts.ready.then(fitRw);
+new MutationObserver(()=>{ const e=$('#rw'); if(e&&!e.dataset.fit){ e.dataset.fit=1; fitRw(); } }).observe($('#app'),{childList:true});
 if(!RM) setInterval(()=>{
     const e=$('#rw');
     if(!e)return;

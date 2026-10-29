@@ -286,3 +286,6 @@ img{max-width:100%;height:auto}
   .gf.on .hl, .gstep.on .gbar, .gcur.click::after { animation: none; }
 }
 .mk-chip .ic { width: 11px; height: 11px; vertical-align: -1px; }
+
+/* rotating hero word: its own line, never wraps (size fitted in core.js) */
+#rw { white-space: nowrap; }

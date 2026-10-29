@@ -269,3 +269,6 @@ img{max-width:100%;height:auto}
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) #guide { --ga: #3B82F6; --gok: #4ADE80; } }
 :root[data-theme="dark"] #guide { --ga: #3B82F6; --gok: #4ADE80; }
 .mk-chip .ic { width: 11px; height: 11px; vertical-align: -1px; }
+
+/* rotating hero word: its own line, never wraps (size fitted in core.js) */
+#rw { white-space: nowrap; }
