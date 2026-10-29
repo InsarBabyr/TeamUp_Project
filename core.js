@@ -197,7 +197,14 @@ async function capToken(){
 const capReset=()=>{ if(capId!==null&&window.turnstile) turnstile.reset(capId); };
 
 const A={
-    go:d=>{if(d.id)S.op=d.id; go(d.v)},
+    go:d=>{if(d.id)S.op=d.id; if(d.v==='create'&&C.edit) C=nC(); go(d.v)},
+    edit:d=>{
+        const p=S.projects.find(x=>x.id===d.id); if(!p||p.authorId!=='me') return;
+        const sk={}; p.req.forEach(s=>sk[s]='req'); p.opt.forEach(s=>sk[s]='opt');
+        C={edit:p.id,title:p.title,type:p.type,desc:p.desc==='No description yet.'?'':p.desc,sk,urgent:p.urgent,trial:p.trial,trialTask:p.trialTask,trialDue:p.trialDue,due0:p.trialDue,novice:p.novice,n:p.n,sk0:p.req.concat(p.opt)};
+        go('create');
+    },
+    cancelEdit:()=>{const id=C.edit; C=nC(); S.op=id; go('mine')},
     how:()=>{const e=$('#how'); e&&e.scrollIntoView({behavior:RM?'auto':'smooth'})},
     
     openAuth:()=>{ $('#authModal').classList.add('visible'); A.setAuth({m:'login'}); capRender(); setTimeout(()=>$('#authEmail').focus(),50); },
@@ -386,6 +393,7 @@ const A={
         if(need()) return;
         const req=Object.keys(C.sk).filter(s=>C.sk[s]==='req'), opt=Object.keys(C.sk).filter(s=>C.sk[s]==='opt');
         if(cl(C.title,80).length<3||!req.length) return toast('Add a title (3+ characters) and at least one required skill');
+        if(C.edit) return saveEdit(req,opt);
         if(!tok('pub')) return;
         if(C.trialDue&&!okDate(C.trialDue)) return toast('Trial deadline must be a real date, today or later');
         const due=C.trialDue?C.trialDue:null;
@@ -511,6 +519,22 @@ async function loadSkills(){
 // Find shows the newest PLIM open projects; your own and the ones you applied to are always loaded
 const PLIM=100;
 const PF='id,author_id,title,project_type,description,urgent,beginner_friendly,spots_needed,status,trial_format,trial_task,trial_due,created_at,author:profiles!projects_author_id_fkey(display_name,program_code,group_number),project_skills(is_required,skills(name))';
+// Save an edited project: its fields, then its skills (added or changed first, removed last,
+// so a failure never leaves the project without skills)
+async function saveEdit(req,opt){
+    if(!tok('cl')) return;
+    if(C.trialDue&&C.trialDue!==C.due0&&!okDate(C.trialDue)) return toast('Trial deadline must be a real date, today or later');
+    const id=C.edit;
+    let r=await sb.from('projects').update({title:cl(C.title,80),project_type:TYDB[C.type],description:cl(C.desc,1000)||'No description yet.',urgent:C.urgent,beginner_friendly:C.novice,spots_needed:C.n,trial_format:C.trial,trial_task:cl(C.trialTask,300)||null,trial_due:C.trialDue||null}).eq('id',id);
+    if(r.error) return dberr(r.error);
+    const rows=req.map(k=>({project_id:id,skill_id:SKID[k],is_required:true})).concat(opt.map(k=>({project_id:id,skill_id:SKID[k],is_required:false})));
+    r=await sb.from('project_skills').upsert(rows,{onConflict:'project_id,skill_id'});
+    if(r.error) return dberr(r.error);
+    const gone=C.sk0.filter(s=>!C.sk[s]).map(s=>SKID[s]).filter(Boolean);
+    if(gone.length){ r=await sb.from('project_skills').delete().eq('project_id',id).in('skill_id',gone); if(r.error) return dberr(r.error); }
+    C=nC(); S.op=id; await load(); toast('Changes saved'); go('mine');
+}
+
 async function load(){
     if(!S.me) return;
     const uid=S.me.uid;

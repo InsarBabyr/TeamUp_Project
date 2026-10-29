@@ -68,7 +68,7 @@ V.detail=()=>{
 <div class="card tbox"><div class="lbl">How the trial works</div><div style="font-size:14px;line-height:1.5">Format: ${esc(p.trial)}. You take a small independent piece of the project and the author decides who stays. Contacts open after acceptance.${p.trialTask?` Trial task: ${esc(p.trialTask)}${p.trialDue?', deadline '+esc(p.trialDue):''}.`:''}</div></div></div>${form}</div>`;
 };
 
-V.create=()=>`<div class="wrap"><div class="main card"><h1>New project</h1>
+V.create=()=>`<div class="wrap"><div class="main card"><h1>${C.edit?'Edit project':'New project'}</h1>
 <div class="col"><label class="lbl" for="ct">Title</label><input id="ct" class="fld" data-k="C.title" maxlength="80" placeholder="What are we building" value="${esc(C.title)}"></div>
 <div class="col"><label class="lbl" for="cd">Description</label><textarea id="cd" class="fld" data-k="C.desc" maxlength="1000" placeholder="What needs to be done and by when">${esc(C.desc)}</textarea></div>
 <div class="col"><div class="lbl">Type</div><div class="row">${TY.map(t=>chip(t,C.type===t,`data-a="cty" data-t="${t}"`)).join('')}</div></div>
@@ -79,7 +79,7 @@ V.create=()=>`<div class="wrap"><div class="main card"><h1>New project</h1>
 <div class="col"><label class="lbl" for="tt">Trial task (optional)</label><textarea id="tt" class="fld" data-k="C.trialTask" maxlength="300" placeholder="A small independent task">${esc(C.trialTask)}</textarea></div><div class="col"><label class="lbl" for="td">Trial deadline (optional)</label><input id="td" type="date" min="${todayStr()}" class="fld" data-k="C.trialDue" value="${esc(C.trialDue)}"></div>
 <div class="row" style="justify-content:space-between"><span class="lbl">Beginners welcome</span>${chip(C.novice?'Yes':'No',C.novice,'data-a="cno"')}</div>
 <div class="row" style="justify-content:space-between"><span class="lbl">People needed</span><div class="row">${chip('−',0,'data-a="cn" data-d="-1"')}<b>${C.n}</b>${chip('+',0,'data-a="cn" data-d="1"')}</div></div>
-<div class="mut">Your Telegram (from Profile) opens to a candidate after you accept them.</div><button class="btn" data-a="pub">Publish</button></div></div>`;
+<div class="mut">Your Telegram (from Profile) opens to a candidate after you accept them.</div><button class="btn" data-a="pub">${C.edit?'Save changes':'Publish'}</button>${C.edit?'<button class="ghost" data-a="cancelEdit">Cancel</button>':''}</div></div>`;
 
 V.mine=()=>{
     const M=S.projects.filter(p=>p.authorId==='me'), p=M.find(x=>x.id===S.op)||M[0];
@@ -87,7 +87,7 @@ V.mine=()=>{
     const left=`<div class="col"><button class="btn" data-a="go" data-v="create">+ Create project</button><div class="hsc">${M.length?M.map(x=>`<article class="card${p&&x.id===p.id?' sel':''}" data-a="op" data-id="${x.id}"><div class="top"><h3>${esc(x.title)}</h3><span class="chip ${x.status==='open'?'on':''}">${x.status==='open'?'Open':'Closed'}</span></div><div class="mut">${x.offers.length} applications · ${x.offers.filter(o=>o.st==='new').length} new</div></article>`).join(''):'<div class="card mut">No projects yet. Create one and applications will appear here.</div>'}</div></div>`;
     if(!p) return `<div class="wrap">${left}</div>`;
     const T=[['new','New'],['trial','On trial'],['team','Accepted'],['reserve','Rejected']], L=p.offers.filter(o=>o.st===S.tab);
-    return `<div class="wrap">${left}<div class="main col" style="gap:16px"><div class="top"><h1>${esc(p.title)}</h1><button class="ghost" data-a="${p.status==='open'?'close':'reopen'}">${p.status==='open'?'Close project':'Reopen project'}</button></div>
+    return `<div class="wrap">${left}<div class="main col" style="gap:16px"><div class="top"><h1>${esc(p.title)}</h1><span class="row acts"><button class="ghost" data-a="edit" data-id="${p.id}">Edit project</button><button class="ghost" data-a="${p.status==='open'?'close':'reopen'}">${p.status==='open'?'Close project':'Reopen project'}</button></span></div>
 <div class="card"><div class="row">${skl(p)}</div><div class="col"><label class="lbl" for="tt">Trial task (optional)</label><textarea id="tt" class="fld" data-k="T.trialTask" maxlength="300" placeholder="A small independent task for candidates on trial">${esc(p.trialTask||'')}</textarea></div><div class="col"><label class="lbl" for="td">Trial deadline (optional)</label><input id="td" type="date" class="fld" data-k="T.trialDue" value="${esc(p.trialDue||'')}"></div></div>
 <div class="row">${T.map(([k,t])=>chip(`${t} ${p.offers.filter(o=>o.st===k).length}`,S.tab===k,`data-a="tab" data-t="${k}"`)).join('')}</div>
 ${L.length?L.map(o=>oc(o,p)).join(''):'<div class="card mut">Nothing here yet.</div>'}</div></div>`;

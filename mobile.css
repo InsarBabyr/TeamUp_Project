@@ -157,3 +157,6 @@ img{max-width:100%;height:auto}
 .srt.on { text-decoration: underline; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .fit.all { color: #4ADE80; } }
 :root[data-theme="dark"] .fit.all { color: #4ADE80; }
+
+/* project actions next to the title in My projects */
+.acts { gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
