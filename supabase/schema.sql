@@ -4,7 +4,7 @@
 --
 -- Not in this file (they live in the dashboard): Auth settings, SMTP and email templates.
 -- See "Supabase settings the app relies on" in README.md.
--- Exported 2026-10-28, updated with migration 6.
+-- Exported 2026-10-28, updated with migrations 6 and 7.
 
 begin;
 
@@ -68,7 +68,7 @@ create table public.projects (
   urgent            boolean not null default false,
   beginner_friendly boolean not null default false,
   spots_needed      integer not null default 1 check (spots_needed between 1 and 10),
-  status            text not null default 'open' check (status in ('open', 'closed')),
+  status            text not null default 'open' check (status in ('open', 'closed', 'assembled')),
   created_at        timestamptz not null default now(),
   trial_format      text not null default 'Quick chat' check (trial_format in ('No trial', 'Quick chat', 'Small task')),
   trial_task        text check (trial_task is null or char_length(trial_task) <= 300),
@@ -95,7 +95,7 @@ create table public.applications (
 create table public.notifications (
   id            bigint generated always as identity primary key,
   user_id       uuid not null references auth.users(id) on delete cascade,
-  kind          text not null check (kind in ('new_application', 'status', 'withdrawn')),
+  kind          text not null check (kind in ('new_application', 'status', 'withdrawn', 'assembled')),
   project_id    uuid references public.projects(id) on delete cascade,
   project_title text,
   actor_name    text,
@@ -264,6 +264,25 @@ begin
 end;
 $$;
 
+-- security definer: when a team is assembled, notifies everyone who applied
+create or replace function private.notify_assembled()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if new.status = 'assembled' and old.status is distinct from 'assembled' then
+    -- status = that candidate's application status, so the page can tell members from the rest
+    insert into notifications (user_id, kind, project_id, project_title, status)
+    select a.candidate_id, 'assembled', new.id, new.title, a.status
+    from applications a
+    where a.project_id = new.id;
+  end if;
+  return null;
+end;
+$$;
+
 -- Turns on RLS for every new table in public (event trigger below)
 create or replace function public.rls_auto_enable()
 returns event_trigger
@@ -304,6 +323,7 @@ revoke execute on function public.lock_application_fields()  from public, anon, 
 revoke execute on function public.limit_projects_per_day()   from public, anon, authenticated;
 revoke execute on function public.limit_applications_per_day() from public, anon, authenticated;
 revoke execute on function private.notify_application()      from public, anon, authenticated;
+revoke execute on function private.notify_assembled()        from public, anon, authenticated;
 revoke execute on function public.apply_to_project(uuid, int, text, text, text, text, text) from public, anon;
 grant  execute on function public.apply_to_project(uuid, int, text, text, text, text, text) to authenticated;
 revoke execute on function private.has_applied(uuid) from public, anon;
@@ -332,6 +352,10 @@ create trigger lock_application_fields
 create trigger applications_notify
   after insert or update of status or delete on public.applications
   for each row execute function private.notify_application();
+
+create trigger projects_notify_assembled
+  after update of status on public.projects
+  for each row execute function private.notify_assembled();
 
 create event trigger ensure_rls
   on ddl_command_end
@@ -380,7 +404,7 @@ create policy "user_skills read"  on public.user_skills for select to authentica
 create policy "user_skills write" on public.user_skills for all to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 
--- Projects: open ones, your own, and ones you applied to (even after they close)
+-- Projects: open ones, your own, and ones you applied to (even after they close or the team is assembled)
 create policy "projects read" on public.projects for select to authenticated
   using (status = 'open' or author_id = auth.uid() or private.has_applied(id));
 create policy "projects insert" on public.projects for insert to authenticated with check (author_id = auth.uid());

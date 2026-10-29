@@ -65,6 +65,8 @@ V.find=()=>{
                     <div class="row">
                         ${chip('Beginners welcome', F.novice, 'data-a="fn"')}
                         ${chip('Urgent', F.urgent, 'data-a="fu"')}
+                        ${chip('Fits me', F.fit, 'data-a="ffit"')}
+                        ${chip('Hide applied', F.hide, 'data-a="fhide"')}
                     </div>
                 </div>
                 
@@ -142,10 +144,10 @@ V.create=()=>`<div class="wrap"><div class="main card"><h1>${C.edit?'Edit projec
 V.mine=()=>{
     const M=S.projects.filter(p=>p.authorId==='me'), p=M.find(x=>x.id===S.op)||M[0];
     if(p) S.op=p.id;
-    const left=`<div class="side col" style="gap:12px"><button class="btn" data-a="go" data-v="create">+ Create project</button>${M.length?M.map(x=>`<article class="card${p&&x.id===p.id?' sel':''}" data-a="op" data-id="${x.id}" style="${p&&x.id===p.id?'border-color:var(--lav2); background:var(--lav);':''}"><div class="top"><h3 style="${p&&x.id===p.id?'color:var(--lav2);':''}">${esc(x.title)}</h3><span class="chip ${x.status==='open'?'on':''}">${x.status==='open'?'Open':'Closed'}</span></div><div class="mut">${x.offers.length} applications · ${x.offers.filter(o=>o.st==='new').length} new</div></article>`).join(''):'<div class="card mut">No projects yet. Create one and applications will appear here.</div>'}</div>`;
+    const left=`<div class="side col" style="gap:12px"><button class="btn" data-a="go" data-v="create">+ Create project</button>${M.length?M.map(x=>`<article class="card${p&&x.id===p.id?' sel':''}" data-a="op" data-id="${x.id}" style="${p&&x.id===p.id?'border-color:var(--lav2); background:var(--lav);':''}"><div class="top"><h3 style="${p&&x.id===p.id?'color:var(--lav2);':''}">${esc(x.title)}</h3><span class="chip ${x.status==='open'?'on':''}">${x.status==='open'?'Open':x.status==='assembled'?'Assembled':'Closed'}</span></div><div class="mut">${x.offers.length} applications · ${x.offers.filter(o=>o.st==='new').length} new</div></article>`).join(''):'<div class="card mut">No projects yet. Create one and applications will appear here.</div>'}</div>`;
     if(!p) return `<div class="wrap">${left}</div>`;
     const T=[['new','New'],['trial','On trial'],['team','Accepted'],['reserve','Rejected']], L=p.offers.filter(o=>o.st===S.tab);
-    return `<div class="wrap">${left}<div class="main col" style="gap:16px"><div class="top"><h1>${esc(p.title)}</h1><span class="row acts"><button class="ghost" data-a="edit" data-id="${p.id}">Edit project</button><button class="ghost" data-a="${p.status==='open'?'close':'reopen'}">${p.status==='open'?'Close project':'Reopen project'}</button></span></div>
+    return `<div class="wrap">${left}<div class="main col" style="gap:16px"><div class="top"><h1>${esc(p.title)}</h1><span class="row acts"><button class="ghost" data-a="edit" data-id="${p.id}">Edit project</button>${p.status==='open'?'<button class="btn sm" data-a="asm">Team assembled</button><button class="ghost" data-a="close">Close project</button>':`<span class="chip on">${pst(p.status)}</span><button class="ghost" data-a="reopen">Reopen project</button>`}</span></div>
 <div class="card"><div class="row">${skl(p)}</div><div class="col"><label class="lbl" for="tt">Trial task (optional)</label><textarea id="tt" class="fld" data-k="T.trialTask" maxlength="300" placeholder="A small independent task for candidates on trial">${esc(p.trialTask||'')}</textarea></div><div class="col"><label class="lbl" for="td">Trial deadline (optional)</label><input id="td" type="date" class="fld" data-k="T.trialDue" value="${esc(p.trialDue||'')}"></div></div>
 <div class="row">${T.map(([k,t])=>chip(`${t} ${p.offers.filter(o=>o.st===k).length}`,S.tab===k,`data-a="tab" data-t="${k}"`)).join('')}</div>
 ${L.length?L.map(o=>oc(o,p)).join(''):'<div class="card mut">Nothing here yet.</div>'}</div></div>`;

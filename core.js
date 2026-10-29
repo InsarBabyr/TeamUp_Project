@@ -58,7 +58,7 @@ document.body.insertAdjacentHTML('beforeend', `
 </div>`);
 
 let S={projects:[],me:null,view:'landing',pid:null,op:null,tab:'new',ready:false};
-const F={skills:[],type:'All',novice:false,urgent:false,q:'',sort:'match'};
+const F={skills:[],type:'All',novice:false,urgent:false,fit:false,hide:false,q:'',sort:'match'};
 const nR=()=>({skill:'',level:1,link:'',did:'',when:'Today',tg:''});
 const nC=()=>({title:'',type:'Hackathon',desc:'',sk:{},urgent:false,trial:'Quick chat',trialTask:'',trialDue:'',novice:true,n:1});
 
@@ -132,15 +132,17 @@ function tok(n){
     return ok;
 }
 
+// project status as shown to people
+const pst=s=>s==='assembled'?'Team assembled':s==='closed'?'Project closed':'Open';
 const mine=p=>S.me&&p.authorId==='me';
 const applied=p=>p.offers.some(o=>o.cid==='me');
-const vis=()=>S.projects.filter(p=>p.authorId!=='me'&&p.status==='open'&&(!F.skills.length||F.skills.every(s=>p.req.includes(s)||p.opt.includes(s)))&&(F.type==='All'||p.type===F.type)&&(!F.novice||p.novice)&&(!F.urgent||p.urgent)&&(!F.q||sc(p)>=0)).sort((a,b)=>F.q?sc(b)-sc(a):F.sort==='match'?fitScore(b)-fitScore(a):0);
+const vis=()=>S.projects.filter(p=>p.authorId!=='me'&&p.status==='open'&&(!F.skills.length||F.skills.every(s=>p.req.includes(s)||p.opt.includes(s)))&&(F.type==='All'||p.type===F.type)&&(!F.novice||p.novice)&&(!F.urgent||p.urgent)&&(!F.fit||fit(p).req>0)&&(!F.hide||!applied(p))&&(!F.q||sc(p)>=0)).sort((a,b)=>F.q?sc(b)-sc(a):F.sort==='match'?fitScore(b)-fitScore(a):0);
 
 const card=p=>`<article class="card" data-a="open" data-id="${p.id}"><div class="top"><h3>${esc(p.title)}</h3>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${p.type} · ${esc(p.author)}</div>${p.desc?`<p class="dsc">${esc(p.desc.slice(0,140))}${p.desc.length>140?'…':''}</p>`:''}<div class="row">${skl(p)}</div>${fitTag(p)}<div class="foot"><span class="mut">${p.n} needed${p.novice?' · beginners welcome':''}</span><button class="btn sm" data-a="open" data-id="${p.id}">${applied(p)?'Applied':'Apply'}</button></div></article>`;
 
 const grid=()=>{
     if(!S.ready) return '<div class="card">Loading projects…</div>';
-    const v=vis(), n=v.length, filtered=F.skills.length||F.type!=='All'||F.novice||F.urgent||F.q;
+    const v=vis(), n=v.length, filtered=F.skills.length||F.type!=='All'||F.novice||F.urgent||F.fit||F.hide||F.q;
     const so=(k,t)=>`<button class="lnk srt${F.sort===k?' on':''}" data-a="fsort" data-s="${k}" aria-pressed="${F.sort===k}">${t}</button>`;
     const sorter=!S.me||F.q?'':S.me.skills.length?` · Sort: ${so('match','Best match')} / ${so('new','Newest')}`:` · <button class="lnk" data-a="go" data-v="profile">Add your skills</button> to see which projects fit you`;
     const cnt=`<div class="mut cnt"><span role="status">${n} project${n===1?'':'s'}${filtered?' match your filters':''}${S.more?` · newest ${PLIM} loaded`:''}</span>${sorter}</div>`;
@@ -162,7 +164,7 @@ ${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}$
 V.apps=()=>{
     const L=[];
     S.projects.forEach(p=>p.offers.filter(o=>o.cid==='me').forEach(o=>L.push([p,o])));
-    return `<div class="wrap"><div class="main col" style="gap:16px"><h1>My applications</h1>${L.length?L.map(([p,o])=>`<div class="card"><div class="top"><h3>${esc(p.title)}</h3><span class="chip ${o.st==='team'||o.st==='trial'?'on':''}">${STT[o.st]}</span></div><div class="mut">${p.type} · ${esc(p.author)}${p.status==='closed'?' · Project closed':''}</div><div class="row"><span class="chip req">${esc(o.skill)} · ${LV[o.level]}</span></div>${o.st==='team'?`<div class="mut">Author's Telegram: <b>${esc(p.tg||'not provided')}</b></div>`:'<div class="mut">The author\'s contact opens once you are accepted.</div>'}${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}<div class="row"><button class="ghost" data-a="open" data-id="${p.id}">View project</button>${o.st==='new'||o.st==='trial'?`<button class="ghost" data-a="wd" data-o="${o.id}">Withdraw</button>`:''}</div></div>`).join(''):'<div class="card">You have not applied yet.<button class="btn" data-a="go" data-v="find">Find projects</button></div>'}</div></div>`;
+    return `<div class="wrap"><div class="main col" style="gap:16px"><h1>My applications</h1>${L.length?L.map(([p,o])=>`<div class="card"><div class="top"><h3>${esc(p.title)}</h3><span class="chip ${o.st==='team'||o.st==='trial'?'on':''}">${STT[o.st]}</span></div><div class="mut">${p.type} · ${esc(p.author)}${p.status==='open'?'':' · '+pst(p.status)}</div><div class="row"><span class="chip req">${esc(o.skill)} · ${LV[o.level]}</span></div>${o.st==='team'?`<div class="mut">Author's Telegram: <b>${esc(p.tg||'not provided')}</b></div>`:'<div class="mut">The author\'s contact opens once you are accepted.</div>'}${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}<div class="row"><button class="ghost" data-a="open" data-id="${p.id}">View project</button>${o.st==='new'||o.st==='trial'?`<button class="ghost" data-a="wd" data-o="${o.id}">Withdraw</button>`:''}</div></div>`).join(''):'<div class="card">You have not applied yet.<button class="btn" data-a="go" data-v="find">Find projects</button></div>'}</div></div>`;
 };
 
 const gated=['find','detail','mine','manage','apps','profile','create'];
@@ -243,7 +245,9 @@ const A={
         toast(r.error?r.error.message:'We sent a new code');
     },
     fsort:d=>{F.sort=d.s; render(false)},
-    fclr:()=>{F.skills=[]; F.type='All'; F.novice=false; F.urgent=false; F.q=''; render(false)},
+    fclr:()=>{F.skills=[]; F.type='All'; F.novice=false; F.urgent=false; F.fit=false; F.hide=false; F.q=''; render(false)},
+    ffit:()=>{F.fit=!F.fit; render(false)},
+    fhide:()=>{F.hide=!F.hide; render(false)},
     bell:()=>{NOPEN=!NOPEN; render(false)},
     nall:async()=>{
         const r=await sb.from('notifications').update({read_at:new Date().toISOString()}).is('read_at',null);
@@ -254,7 +258,7 @@ const A={
         const n=NT.find(x=>String(x.id)===d.id); if(!n) return;
         NOPEN=false;
         if(!n.read_at){ n.read_at=new Date().toISOString(); sb.from('notifications').update({read_at:n.read_at}).eq('id',n.id).then(r=>r.error&&dberr(r.error)); }
-        if(n.kind==='status') return go('apps');
+        if(n.kind==='status'||n.kind==='assembled') return go('apps');
         S.op=n.project_id; go('mine');
     },
     submitAuth:async()=>{
@@ -414,6 +418,11 @@ const A={
         await load(); toast(d.s==='trial'?'Moved to trial':d.s==='team'?'Accepted, contact opened':'Rejected'); render(false);
     },
     wd:async d=>{if(!confirm('Withdraw this application? The author will no longer see it.')||!tok('cl'))return; const r=await sb.from('applications').delete().eq('id',d.o); if(r.error) return dberr(r.error); await load(); toast('Application withdrawn'); render(false);},
+    asm:async()=>{
+        if(!confirm('Mark the team as assembled? The project leaves Find, and everyone who applied gets a notification.')||!tok('cl')) return;
+        const r=await sb.from('projects').update({status:'assembled'}).eq('id',S.op); if(r.error) return dberr(r.error);
+        await load(); toast('Team assembled. Everyone who applied was notified'); render(false);
+    },
     close:async()=>{if(!tok('cl'))return; const r=await sb.from('projects').update({status:'closed'}).eq('id',S.op); if(r.error) return dberr(r.error); await load(); toast('Project closed'); render(false);},
     reopen:async()=>{if(!tok('cl'))return; const r=await sb.from('projects').update({status:'open'}).eq('id',S.op); if(r.error) return dberr(r.error); await load(); toast('Project reopened'); render(false);},
     pav:d=>{S.me.avail=d.w; queueProfile(); render(false);},
@@ -573,6 +582,7 @@ async function load(){
 let NT=[], NOPEN=false, live=null;
 const ntText=n=>{
     const t='“'+(n.project_title||'a project')+'”';
+    if(n.kind==='assembled') return n.status==='accepted'?'Team assembled for '+t+'. You are in it!':t+': the team is assembled';
     return n.kind==='new_application'?(n.actor_name||'Someone')+' applied to '+t
         :n.kind==='withdrawn'?(n.actor_name||'A candidate')+' withdrew from '+t
         :t+': '+(STT[STR[n.status]]||n.status);

@@ -9,8 +9,8 @@ An author posts a project with the skills it needs. Other students apply from th
 ## Features
 
 - **University accounts only.** Registration accepts `@astanait.edu.kz` addresses, and the email is confirmed with a 6-digit code.
-- **Projects.** Post a project with a type, description, required and nice-to-have skills, urgency, "beginners welcome", the number of people needed and a trial format. Edit everything about it after publishing (title, description, skills, terms), and close or reopen it at any time.
-- **Search.** Fuzzy search by title, description and skill, plus filters by type, skills, "beginners welcome" and "urgent".
+- **Projects.** Post a project with a type, description, required and nice-to-have skills, urgency, "beginners welcome", the number of people needed and a trial format. Edit everything about it after publishing (title, description, skills, terms), mark it **Team assembled** when the team is complete (everyone who applied is notified), or close or reopen it at any time.
+- **Search.** Fuzzy search by title, description and skill, plus filters by type, skills, "beginners welcome" and "urgent", plus "Fits me" (you have a required skill) and "Hide applied".
 - **Fits you.** Skills from your profile are marked on every project, cards say how many of the required skills you have, and Find shows the best match first (or the newest, if you switch).
 - **Applications.** Apply with a skill, your level, a link to your work and a short note. Withdraw an application while it is under review or on trial.
 - **Trials.** Authors move candidates through *Under review → On trial → Accepted / Rejected* and can set a trial task with a deadline.
@@ -80,6 +80,7 @@ Both pages load `core.js` first and then their own file. Logic and data changes 
 | `projects` | Posted projects |
 | `project_skills` | Required and nice-to-have skills of a project |
 | `applications` | Applications with status `new`, `on_trial`, `accepted` or `rejected` |
+| `notifications` | The bell: new applications, status changes, withdrawals and assembled teams, written by triggers |
 
 Rules enforced by the database, not only by the page:
 
