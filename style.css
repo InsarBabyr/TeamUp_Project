@@ -172,3 +172,10 @@ img{max-width:100%;height:auto}
 
 /* result counter above the project list */
 .cnt { grid-column: 1 / -1; font-size: 13px; }
+
+/* "Fits you": skills you have, and the match line on project cards */
+.chip.have { background: #F0FDF4; color: #166534; border-color: #86EFAC; }
+.fit { font-size: 13px; font-weight: 600; color: var(--mut); }
+.fit.all { color: #15803D; }
+.srt { font-size: 13px; text-decoration: none; }
+.srt.on { text-decoration: underline; }

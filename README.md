@@ -11,6 +11,7 @@ An author posts a project with the skills it needs. Other students apply from th
 - **University accounts only.** Registration accepts `@astanait.edu.kz` addresses, and the email is confirmed with a 6-digit code.
 - **Projects.** Post a project with a type, description, required and nice-to-have skills, urgency, "beginners welcome", the number of people needed and a trial format. Close or reopen it at any time.
 - **Search.** Fuzzy search by title, description and skill, plus filters by type, skills, "beginners welcome" and "urgent".
+- **Fits you.** Skills from your profile are marked on every project, cards say how many of the required skills you have, and Find shows the best match first (or the newest, if you switch).
 - **Applications.** Apply with a skill, your level, a link to your work and a short note. Withdraw an application while it is under review or on trial.
 - **Trials.** Authors move candidates through *Under review → On trial → Accepted / Rejected* and can set a trial task with a deadline.
 - **Private contacts.** A Telegram handle is visible only between an author and a candidate they accepted, enforced by the database.

@@ -58,7 +58,7 @@ document.body.insertAdjacentHTML('beforeend', `
 </div>`);
 
 let S={projects:[],me:null,view:'landing',pid:null,op:null,tab:'new',ready:false};
-const F={skills:[],type:'All',novice:false,urgent:false,q:''};
+const F={skills:[],type:'All',novice:false,urgent:false,q:'',sort:'match'};
 const nR=()=>({skill:'',level:1,link:'',did:'',when:'Today',tg:''});
 const nC=()=>({title:'',type:'Hackathon',desc:'',sk:{},urgent:false,trial:'Quick chat',trialTask:'',trialDue:'',novice:true,n:1});
 
@@ -66,7 +66,23 @@ let R=nR(), C=nC(), G={name:'',email:'',pw:''}, RCV=false, tm, lastT=0;
 const P=()=>S.projects.find(p=>p.id===S.pid);
 
 const chip=(t,on,at,x='')=>`<button class="chip${on?' on':''}${x}" ${at}>${esc(t)}</button>`;
-const skl=p=>p.req.map(s=>`<span class="chip req">${esc(s)}</span>`).join('')+p.opt.map(s=>`<span class="chip opt">${esc(s)}</span>`).join('');
+// "Fits you": how many of a project's skills are in your profile (not shown on your own projects)
+const myS=()=>new Set(S.me?S.me.skills.map(x=>x.s):[]);
+const fit=p=>{const h=myS();return{req:p.req.filter(s=>h.has(s)).length,opt:p.opt.filter(s=>h.has(s)).length}};
+const fitScore=p=>{const f=fit(p);return f.req*2+f.opt};
+const fitTag=p=>{
+    if(!S.me||mine(p)||!p.req.length) return '';
+    const f=fit(p), n=p.req.length;
+    if(!f.req&&!f.opt) return '';
+    return f.req===n?`<div class="fit all">✓ You have ${n>1?'all '+n+' required skills':'the required skill'}${f.opt?` + ${f.opt} nice-to-have`:''}</div>`
+        :f.req?`<div class="fit">You have ${f.req} of ${n} required skills${f.opt?` + ${f.opt} nice-to-have`:''}</div>`
+        :`<div class="fit">You have ${f.opt} nice-to-have skill${f.opt>1?'s':''}, none of the required</div>`;
+};
+const skl=p=>{
+    const h=S.me&&!mine(p)?myS():new Set();
+    const c=(s,k)=>h.has(s)?`<span class="chip ${k} have" title="You have this skill">✓ ${esc(s)}</span>`:`<span class="chip ${k}">${esc(s)}</span>`;
+    return p.req.map(s=>c(s,'req')).join('')+p.opt.map(s=>c(s,'opt')).join('');
+};
 const todayStr=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 const realDate=s=>{ if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const[y,m,d]=s.split('-').map(Number), x=new Date(y,m-1,d); return x.getFullYear()===y&&x.getMonth()===m-1&&x.getDate()===d; };
 const okDate=s=>realDate(s)&&s>=todayStr();   // a real calendar date, today or later
@@ -118,14 +134,16 @@ function tok(n){
 
 const mine=p=>S.me&&p.authorId==='me';
 const applied=p=>p.offers.some(o=>o.cid==='me');
-const vis=()=>S.projects.filter(p=>p.authorId!=='me'&&p.status==='open'&&(!F.skills.length||F.skills.every(s=>p.req.includes(s)||p.opt.includes(s)))&&(F.type==='All'||p.type===F.type)&&(!F.novice||p.novice)&&(!F.urgent||p.urgent)&&(!F.q||sc(p)>=0)).sort((a,b)=>F.q?sc(b)-sc(a):0);
+const vis=()=>S.projects.filter(p=>p.authorId!=='me'&&p.status==='open'&&(!F.skills.length||F.skills.every(s=>p.req.includes(s)||p.opt.includes(s)))&&(F.type==='All'||p.type===F.type)&&(!F.novice||p.novice)&&(!F.urgent||p.urgent)&&(!F.q||sc(p)>=0)).sort((a,b)=>F.q?sc(b)-sc(a):F.sort==='match'?fitScore(b)-fitScore(a):0);
 
-const card=p=>`<article class="card" data-a="open" data-id="${p.id}"><div class="top"><h3>${esc(p.title)}</h3>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${p.type} · ${esc(p.author)}</div>${p.desc?`<p class="dsc">${esc(p.desc.slice(0,140))}${p.desc.length>140?'…':''}</p>`:''}<div class="row">${skl(p)}</div><div class="foot"><span class="mut">${p.n} needed${p.novice?' · beginners welcome':''}</span><button class="btn sm" data-a="open" data-id="${p.id}">${applied(p)?'Applied':'Apply'}</button></div></article>`;
+const card=p=>`<article class="card" data-a="open" data-id="${p.id}"><div class="top"><h3>${esc(p.title)}</h3>${p.urgent?'<span class="urg">Urgent</span>':''}</div><div class="mut">${p.type} · ${esc(p.author)}</div>${p.desc?`<p class="dsc">${esc(p.desc.slice(0,140))}${p.desc.length>140?'…':''}</p>`:''}<div class="row">${skl(p)}</div>${fitTag(p)}<div class="foot"><span class="mut">${p.n} needed${p.novice?' · beginners welcome':''}</span><button class="btn sm" data-a="open" data-id="${p.id}">${applied(p)?'Applied':'Apply'}</button></div></article>`;
 
 const grid=()=>{
     if(!S.ready) return '<div class="card">Loading projects…</div>';
     const v=vis(), n=v.length, filtered=F.skills.length||F.type!=='All'||F.novice||F.urgent||F.q;
-    const cnt=`<div class="mut cnt" role="status">${n} project${n===1?'':'s'}${filtered?' match your filters':''}${S.more?` · newest ${PLIM} loaded`:''}</div>`;
+    const so=(k,t)=>`<button class="lnk srt${F.sort===k?' on':''}" data-a="fsort" data-s="${k}" aria-pressed="${F.sort===k}">${t}</button>`;
+    const sorter=!S.me||F.q?'':S.me.skills.length?` · Sort: ${so('match','Best match')} / ${so('new','Newest')}`:` · <button class="lnk" data-a="go" data-v="profile">Add your skills</button> to see which projects fit you`;
+    const cnt=`<div class="mut cnt"><span role="status">${n} project${n===1?'':'s'}${filtered?' match your filters':''}${S.more?` · newest ${PLIM} loaded`:''}</span>${sorter}</div>`;
     return cnt+(n?v.map(card).join(''):`<div class="card">Nothing found.${filtered?' <button class="lnk" data-a="fclr">Clear all filters</button>':''} Or create your own project.</div>`);
 };
 
@@ -217,6 +235,7 @@ const A={
         const r=await sb.auth.resend({type:'signup',email:e,options:{captchaToken}}); capReset();
         toast(r.error?r.error.message:'We sent a new code');
     },
+    fsort:d=>{F.sort=d.s; render(false)},
     fclr:()=>{F.skills=[]; F.type='All'; F.novice=false; F.urgent=false; F.q=''; render(false)},
     bell:()=>{NOPEN=!NOPEN; render(false)},
     nall:async()=>{
