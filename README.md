@@ -19,6 +19,7 @@ An author posts a project with the skills it needs. Other students apply from th
 - **Live notifications.** Authors see new applications and candidates see status changes without reloading, with an optional sound.
 - **Profile.** Name, programme and group, Telegram, availability and skills with levels and links.
 - **Password reset** with a code sent by email.
+- **How-to guide on the home page.** An animated walkthrough with four tabs (create a project, fill in your profile, apply, pick your team): a mock screen shows each step while the explanation is highlighted next to it. Built in HTML/CSS, so it is sharp on any screen, follows the dark theme and weighs a few KB. It plays only while on screen, pauses on hover or focus, steps can be clicked, and with *reduce motion* it does not play by itself.
 - **Two layouts.** A desktop version (`index.html`) and a mobile version (`mobile.html`). Phones are redirected to the mobile one automatically.
 
 ## Tech stack

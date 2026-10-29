@@ -794,3 +794,88 @@ if(!RM) setInterval(()=>{
     e.style.transform='translateY(8px)';
     setTimeout(()=>{wi=(wi+1)%words.length;e.textContent=words[wi];e.style.opacity=1;e.style.transform='none'},260);
 },2400);
+
+// ---------- Animated how-to guide on the landing page ----------
+// Each guide is a few steps; each step has the explanation (h, d), a mock screen (v) and the element the cursor clicks (c, a selector in v).
+// Steps advance every GSTEP ms while the guide is on screen, not hovered and motion is allowed.
+const GSTEP=3600;
+const mk={
+    nav:(on,badge)=>`<div class="mk-nav"><span class="mk-logo"></span><span class="mk-sp"></span>${['Find','My projects','Post','Applications','Me'].map(t=>`<span class="mk-tab${t===on?' on':''}" data-t="${t}">${t}</span>`).join('')}<span class="mk-bell">${ic('bell')}${badge?`<i>${badge}</i>`:''}</span></div>`,
+    field:(l,v,type)=>`<div class="mk-f"><span class="mk-l">${l}</span><span class="mk-in">${type?`<span class="ty" style="--n:${v.length}">${v}</span>`:v}</span></div>`,
+    chips:(a,cls='')=>`<div class="mk-row">${a.map(x=>`<span class="mk-chip ${cls}">${x}</span>`).join('')}</div>`,
+    btn:(t,hl)=>`<span class="mk-btn${hl?' hl':''}">${t}</span>`,
+    toast:t=>`<span class="mk-toast">${t}</span>`,
+    card:(t,meta,inner='',hl)=>`<div class="mk-card${hl?' hl':''}"><b>${t}</b><span class="mk-m">${meta}</span>${inner}</div>`
+};
+const GD=[
+ {k:'create',t:'Create a project',s:[
+  {h:'Open “Post”',d:'It is in the top menu; on a phone, tap “+ New”.',c:'.mk-tab[data-t=Post]',v:mk.nav('Find')+`<div class="mk-body">${mk.card('Open projects','12 projects · best match first')}${mk.card('AI Study Buddy','Hackathon · 2 needed')}</div>`},
+  {h:'Describe the project',d:'Give it a clear title, say what needs to be done and pick the type: hackathon, thesis, startup…',c:'.mk-in',v:mk.nav('Post')+`<div class="mk-body"><b class="mk-h">Post a project</b>${mk.field('Title','Campus food delivery app',1)}${mk.field('Type',mk.chips(['Hackathon','Thesis','Startup']).replace('mk-chip ','mk-chip on '))}</div>`},
+  {h:'Add the skills you need',d:'Mark them required or nice to have. Students who have them see your project first. Links and files go here too.',c:'.pop:last-child',v:mk.nav('Post')+`<div class="mk-body"><b class="mk-h">Post a project</b>${mk.field('Title','Campus food delivery app')}<span class="mk-l">Skills</span>${mk.chips(['Flutter · required','UI/UX Design · required','Firebase · nice to have'],'pop')}<span class="mk-l">Links</span>${mk.chips([ic('link')+' Figma'],'pop')}</div>`},
+  {h:'Choose a trial and publish',d:'A quick chat or a small task shows who fits. Press “Publish”: the project appears in Find.',c:'.mk-btn.hl',v:mk.nav('Post')+`<div class="mk-body"><b class="mk-h">Terms</b>${mk.field('Trial format',mk.chips(['Quick chat','Small task']).replace('mk-chip "','mk-chip on"'))}${mk.field('People needed','2')}<div class="mk-end">${mk.btn('Publish',1)}</div></div>${mk.toast('Project published')}`}
+ ]},
+ {k:'profile',t:'Fill in your profile',s:[
+  {h:'Open “Me”',d:'Your profile is what authors see when you apply, so it is worth two minutes.',c:'.mk-tab[data-t=Me]',v:mk.nav('Find')+`<div class="mk-body">${mk.card('Open projects','12 projects')}</div>`},
+  {h:'Name, group and Telegram',d:'Your group, like SE-2402, and your Telegram. The Telegram is shown only to authors who accept you.',c:'.mk-f:nth-of-type(3) .mk-in',v:mk.nav('Me')+`<div class="mk-body"><b class="mk-h">Profile</b>${mk.field('Name','Aruzhan Sadykova',1)}${mk.field('Group','SE-2402')}${mk.field('Telegram','@aruzhan_s',1)}</div>`},
+  {h:'Add your skills and level',d:'Learning, coursework or a real project: be honest, it decides which projects fit you.',c:'.mk-chip.on',v:mk.nav('Me')+`<div class="mk-body"><b class="mk-h">My skills</b>${mk.card('Python','Real project',mk.chips(['Learning','Coursework','Real project']).replace(/mk-chip ">Real/,'mk-chip on">Real'))}${mk.card('Figma','Coursework','',0)}</div>`},
+  {h:'Prove it with a link',d:'A GitHub repo, a Figma file or coursework. Skills with a link get a “✓ link” mark. Everything saves by itself.',c:'.mk-in',v:mk.nav('Me')+`<div class="mk-body"><b class="mk-h">My skills</b>${mk.card('Python','Real project · ✓ link',mk.field('Link to your work','github.com/aruzhan/bot',1),1)}</div>${mk.toast('Saved')}`}
+ ]},
+ {k:'apply',t:'Apply to a project',s:[
+  {h:'Find a project that fits',d:'Projects with your skills come first. Use “Fits me”, the type and skill filters, or search.',c:'.mk-card.hl',v:mk.nav('Find')+`<div class="mk-body">${mk.chips(['Fits me','Hackathon','Beginners welcome']).replace('mk-chip ','mk-chip on ')}${mk.card('Campus food delivery app','Hackathon · 2 needed','<span class="mk-fit">✓ You have all 2 required skills</span>',1)}${mk.card('NLP for Kazakh','Research · 1 needed')}</div>`},
+  {h:'Read the details',d:'What the team needs, the trial format, and materials: links and files from the author.',c:'.mk-row:last-of-type .mk-chip',v:mk.nav('Find')+`<div class="mk-body"><b class="mk-h">Campus food delivery app</b>${mk.chips(['✓ Flutter','✓ UI/UX Design','Firebase'])}<span class="mk-l">Materials</span>${mk.chips([ic('link')+' Figma',ic('file')+' brief.pdf'])}</div>`},
+  {h:'Tell what you did',d:'Pick the skill you apply with, your level and one line about your work. Add a link if you have one.',c:'.mk-btn.hl',v:mk.nav('Find')+`<div class="mk-body"><b class="mk-h">Apply</b>${mk.field('Skill',mk.chips(['Flutter']).replace('mk-chip ','mk-chip on '))}${mk.field('What exactly did you do','Built a Flutter app for a course',1)}<div class="mk-end">${mk.btn('Apply',1)}</div></div>`},
+  {h:'Follow it in Applications',d:'Under review → On trial → Accepted. The bell tells you when the status changes.',c:'.mk-bell',v:mk.nav('Applications',1)+`<div class="mk-body"><b class="mk-h">My applications</b>${mk.card('Campus food delivery app','Flutter · Coursework','<span class="mk-st">On trial</span>',1)}</div>${mk.toast('“Campus food delivery app”: On trial')}`}
+ ]},
+ {k:'manage',t:'Pick your team',s:[
+  {h:'Get notified',d:'The bell shows new applications to your projects, even ones that came while you were away.',c:'.mk-bell',v:mk.nav('Find',2)+`<div class="mk-body"><div class="mk-pop"><b>Notifications</b><span class="un">Daniyar applied to “Campus food delivery app”</span><span>Aigerim applied to “Campus food delivery app”</span></div></div>`},
+  {h:'Compare candidates',d:'Each application shows the skill, level, links to work and what the student did.',c:'.mk-card.hl',v:mk.nav('My projects')+`<div class="mk-body"><b class="mk-h">Campus food delivery app</b>${mk.card('Daniyar · SE-2401','Flutter · Real project · ✓ link','<span class="mk-m">“Shipped a delivery app at a hackathon”</span>',1)}${mk.card('Aigerim · CS-2403','UI/UX Design · Coursework')}</div>`},
+  {h:'Give a small trial',d:'Move a candidate to “On trial” and write a small task with a deadline.',c:'.mk-btn.hl',v:mk.nav('My projects')+`<div class="mk-body">${mk.card('Daniyar · SE-2401','Flutter · Real project',`<div class="mk-row">${mk.btn('On trial',1)}${mk.btn('Accept')}${mk.btn('Reject')}</div>`)}${mk.field('Trial task','Build the order screen by Friday',1)}</div>`},
+  {h:'Accept and team up',d:'Accept the people you want: their Telegram opens. When the team is complete, mark it “Team assembled”.',c:'.mk-btn.hl',v:mk.nav('My projects')+`<div class="mk-body"><div class="mk-end">${mk.btn('Team assembled',1)}</div>${mk.card('Daniyar · SE-2401','Accepted','<span class="mk-m">Telegram: <b>@daniyar_dev</b></span>')}</div>${mk.toast('Team assembled. Everyone who applied was notified')}`}
+ ]}
+];
+const GS={g:0,s:0,play:!RM,hover:false,t:0};
+const guide=()=>{
+    const g=GD[GS.g];
+    GS.t=Date.now();   // the step on screen gets its full time after every render
+    return `<section class="sec" id="guide" aria-labelledby="guide-h"><h2 id="guide-h">How to use TeamUp</h2>
+<div class="gtabs" role="tablist">${GD.map((x,i)=>`<button role="tab" class="gtab${i===GS.g?' on':''}" aria-selected="${i===GS.g}" data-a="gtab" data-i="${i}">${x.t}</button>`).join('')}</div>
+<div class="gbox${GS.play?'':' paused'}">
+<ol class="gsteps">${g.s.map((s,i)=>`<li><button class="gstep${i===GS.s?' on':''}" data-a="gstep" data-i="${i}"${i===GS.s?' aria-current="step"':''}><span class="gnum">${i+1}</span><span><b>${s.h}</b><span class="gd">${s.d}</span></span><i class="gbar"></i></button></li>`).join('')}</ol>
+<div class="gscreen" aria-hidden="true">${g.s.map((s,i)=>`<div class="gf${i===GS.s?' on':''}">${s.v}</div>`).join('')}<span class="gcur">${ic('cursor')}</span></div>
+<button class="ghost sm gplay" data-a="gplay" aria-label="${GS.play?'Pause':'Play'} the guide">${GS.play?'❚❚ Pause':'▶ Play'}</button>
+</div></section>`;
+};
+// show step s of the current guide by switching classes, without re-rendering the page
+function gShow(s){
+    const box=$('#guide'); if(!box) return;
+    GS.s=s; GS.t=Date.now();
+    const g=GD[GS.g];
+    box.querySelectorAll('.gstep').forEach((b,i)=>{ b.classList.remove('on'); b.removeAttribute('aria-current'); if(i===s){ void b.offsetWidth; b.classList.add('on'); b.setAttribute('aria-current','step'); } });
+    box.querySelectorAll('.gf').forEach((f,i)=>f.classList.toggle('on',i===s));
+    const c=box.querySelector('.gcur'); c.classList.remove('click'); gPos(); setTimeout(()=>c.classList.add('click'),RM?0:750);
+}
+// put the cursor on the step's target element, measured on the mock as it is laid out now (works at any width)
+function gPos(){
+    const box=$('#guide'); if(!box) return;
+    const scr=box.querySelector('.gscreen'), f=box.querySelectorAll('.gf')[GS.s], c=box.querySelector('.gcur');
+    const t=f&&f.querySelector(GD[GS.g].s[GS.s].c); if(!t) return;
+    const a=scr.getBoundingClientRect(), r=t.getBoundingClientRect();
+    c.style.left=(r.left-a.left+Math.min(r.width*.6,r.width-6))+'px'; c.style.top=(r.top-a.top+r.height*.6)+'px';
+}
+const gRedraw=()=>{ const box=$('#guide'); if(box){ box.outerHTML=guide(); gShow(GS.s); } };
+Object.assign(A,{
+    gtab:d=>{GS.g=+d.i; GS.s=0; gRedraw();},
+    gstep:d=>{gShow(+d.i);},
+    gplay:()=>{GS.play=!GS.play; gRedraw();}
+});
+addEventListener('mouseover',e=>{GS.hover=!!(e.target.closest&&e.target.closest('.gbox'))});
+addEventListener('focusin',e=>{GS.hover=!!(e.target.closest&&e.target.closest('.gbox'))});
+setInterval(()=>{
+    const box=$('#guide'); if(!box) return;
+    gPos();
+    if(!GS.play||GS.hover||document.hidden) return;
+    const r=box.getBoundingClientRect(); if(r.bottom<0||r.top>innerHeight) return;
+    if(Date.now()-GS.t<GSTEP) return;
+    const n=GD[GS.g].s.length;
+    if(GS.s+1<n) gShow(GS.s+1); else { GS.g=(GS.g+1)%GD.length; GS.s=0; gRedraw(); }
+},250);

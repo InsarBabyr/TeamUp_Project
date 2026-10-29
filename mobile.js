@@ -23,6 +23,7 @@ V.landing=()=>{
 <div class="card">${IMG1()}<div class="num">1</div><h3>Post or browse</h3><div class="mut">Describe your project and the skills you need, or filter other students' projects by skill and type.</div></div>
 <div class="card">${IMG2()}<div class="num">2</div><h3>Apply in a click</h3><div class="mut">Your profile with skills, levels and links does the talking. Add one line about what you did.</div></div>
 <div class="card">${IMG3()}<div class="num">3</div><h3>Try, then team up</h3><div class="mut">Authors give a small trial task first. Contacts open only after acceptance.</div></div></div></section>
+${guide()}
 <section class="sec rv"><h2>One account. Two roles.</h2><div class="g3">
 <div class="card" style="background:var(--lav);color:var(--po)"><span class="pill" style="align-self:flex-start">Author</span><h3>You post a project</h3><div>Publish your thesis, research or hackathon idea, review applicants, accept to a trial, build the team.</div></div>
 <div class="card" style="background:var(--mint);color:var(--po)"><span class="pill" style="align-self:flex-start">Candidate</span><h3>You join someone else's</h3><div>Apply to other students' projects from the same profile. You can be both at once, but never apply to your own.</div></div></div></section>
