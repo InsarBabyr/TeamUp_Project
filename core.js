@@ -21,12 +21,12 @@ document.body.insertAdjacentHTML('beforeend', `
 <div id="authModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="authModalTitle">
   <div class="modal-card">
     <div class="top" style="align-items:center;">
-      <h2 id="authModalTitle" style="font-size:20px;margin:0;">Sign In</h2>
+      <h2 id="authModalTitle" style="font-size:20px;margin:0;">Sign in</h2>
       <button class="ghost sm" data-a="closeAuth" aria-label="Close" style="min-height:32px;padding:0 8px;border-radius:8px;">✕</button>
     </div>
     <div id="authTabs" class="tabs-row">
-      <button id="tabLogin" class="active" data-a="setAuth" data-m="login">Sign In</button>
-      <button id="tabRegister" data-a="setAuth" data-m="register">Register</button>
+      <button id="tabLogin" class="active" data-a="setAuth" data-m="login">Sign in</button>
+      <button id="tabRegister" data-a="setAuth" data-m="register">Sign up</button>
     </div>
     <div id="regFields" class="col" style="display:none;">
       <label class="lbl" for="authName">First name</label>
@@ -53,7 +53,7 @@ document.body.insertAdjacentHTML('beforeend', `
     <button id="resendLink" class="lnk" data-a="resendCode" style="display:none;">Send the code again</button>
     <button id="backLink" class="lnk" data-a="setAuth" data-m="login" style="display:none;">← Back to sign in</button>
     <div id="captcha" class="cap"></div>
-    <button class="btn" data-a="submitAuth" id="authBtn" data-mode="login" style="margin-top:8px;">Log In</button>
+    <button class="btn" data-a="submitAuth" id="authBtn" data-mode="login" style="margin-top:8px;">Sign in</button>
   </div>
 </div>`);
 
@@ -95,7 +95,6 @@ const pic=(n,alt,w,h,s1,s2,sizes,cls='')=>HEAVY
 let SND=false; try{SND=localStorage.getItem('tu_snd')==='1'}catch(e){}
 let ding=null;
 const beep=()=>{ if(!SND) return; try{ ding=ding||new Audio('assets/notify.mp3'); ding.currentTime=0; const p=ding.play(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} };
-const sndBtn=()=>`<button class="ghost sm snd" data-a="snd" aria-pressed="${SND}" aria-label="Notification sound: ${SND?'on':'off'}" title="Notification sound: ${SND?'on':'off'}">${ic(SND?'sound-on':'sound-off')}<span class="snd-t">${SND?'Sound on':'Sound off'}</span></button>`;
 const IMG1=()=>pic('step1','Illustration: two project cards with skill tags and a magnifying glass',480,320,480,960,'(max-width:600px) 90vw, 360px','step-img');
 const IMG2=()=>pic('step2','Illustration: a student profile card with skills and an Apply button',480,320,480,960,'(max-width:600px) 90vw, 360px','step-img');
 const IMG3=()=>pic('step3','Illustration: three students joined into one team, with a progress bar and a check mark',480,320,480,960,'(max-width:600px) 90vw, 360px','step-img');
@@ -217,9 +216,9 @@ const A={
     fq:d=>{C.files.splice(+d.i,1); render(false)},
     fdel:d=>{C.del.push(d.p); render(false)},
     cancelEdit:()=>{const id=C.edit; C=nC(); S.op=id; go('mine')},
-    how:()=>{const e=$('#how'); e&&e.scrollIntoView({behavior:RM?'auto':'smooth'})},
+    how:()=>{ if(S.view!=='landing') go('landing'); setTimeout(()=>{const e=$('#how'); e&&e.scrollIntoView({behavior:RM?'auto':'smooth'})},50); },
     
-    openAuth:()=>{ $('#authModal').classList.add('visible'); A.setAuth({m:'login'}); capRender(); setTimeout(()=>$('#authEmail').focus(),50); },
+    openAuth:d=>{ const reg=!!d&&d.m==='register'; $('#authModal').classList.add('visible'); A.setAuth({m:reg?'register':'login'}); capRender(); setTimeout(()=>$(reg?'#authName':'#authEmail').focus(),50); },
     closeAuth:()=>{ $('#authModal').classList.remove('visible'); $('#authPassword').value=''; $('#authPassword2').value=''; $('#authCode').value=''; G.pw=''; RCV=false; },
     setAuth:d=>{
         const m = d.m, isReg = m === 'register', isRec = m === 'forgot' || m === 'reset' || m === 'confirm', show = (id, on) => { $(id).style.display = on ? '' : 'none'; };
@@ -234,13 +233,13 @@ const A={
         show('#backLink', isRec);
         $('#tabLogin').classList.toggle('active', !isReg);
         $('#tabRegister').classList.toggle('active', isReg);
-        $('#authModalTitle').textContent = {register:'Register', forgot:'Reset password', reset:'Set a new password', confirm:'Confirm your email'}[m] || 'Sign In';
+        $('#authModalTitle').textContent = {register:'Sign up', forgot:'Reset password', reset:'Set a new password', confirm:'Confirm your email'}[m] || 'Sign in';
         $('#authHint').textContent = m === 'forgot' ? 'Enter your university email. We will send you a code to reset your password.'
             : m === 'confirm' ? 'We sent a code to your university email. Enter it to finish. It can take a few minutes, check the Junk folder too.'
             : 'If this email is registered, we sent a code to it. It can take a few minutes, check the Junk folder too.';
         $('#authPwLbl').textContent = m === 'reset' ? 'New password' : 'Password';
         const b = $('#authBtn');
-        b.textContent = {register:'Create Account', forgot:'Send code', reset:'Save new password', confirm:'Confirm email'}[m] || 'Log In';
+        b.textContent = {register:'Create account', forgot:'Send code', reset:'Save new password', confirm:'Confirm email'}[m] || 'Sign in';
         b.dataset.mode = m;
         $('#authPassword').autocomplete = isReg || m === 'reset' ? 'new-password' : 'current-password';
         if(m === 'reset') { $('#authPassword').value = ''; G.pw = ''; RCV = false; }
@@ -687,7 +686,7 @@ const ago=d=>{const m=Math.max(0,Math.round((Date.now()-new Date(d))/60000));ret
 const bell=()=>{
     if(!S.me) return '';
     const un=NT.filter(n=>!n.read_at).length;
-    return `<span class="ntf"><button class="ghost sm bell" data-a="bell" aria-expanded="${NOPEN}" aria-label="Notifications${un?', '+un+' unread':''}">${ic('bell')}${un?`<span class="bdg">${un>9?'9+':un}</span>`:''}</button>${NOPEN?`<div class="ntp" role="dialog" aria-label="Notifications"><div class="nth"><b>Notifications</b>${un?'<button class="lnk" data-a="nall">Mark all as read</button>':''}</div>${NT.length?NT.map(n=>`<button class="nti${n.read_at?'':' un'}" data-a="nopen" data-id="${n.id}"><span>${esc(ntText(n))}</span><span class="mut">${ago(n.created_at)}</span></button>`).join(''):'<div class="mut nte">No notifications yet</div>'}</div>`:''}</span>`;
+    return `<span class="ntf"><button class="ghost sm bell" data-a="bell" aria-expanded="${NOPEN}" aria-label="Notifications${un?', '+un+' unread':''}">${ic('bell')}${un?`<span class="bdg">${un>9?'9+':un}</span>`:''}</button>${NOPEN?`<div class="ntp" role="dialog" aria-label="Notifications"><div class="nth"><b>Notifications</b><span class="row nta"><button class="lnk snd2" data-a="snd" aria-pressed="${SND}">${ic(SND?'sound-on':'sound-off')}Sound ${SND?'on':'off'}</button>${un?'<button class="lnk" data-a="nall">Mark all as read</button>':''}</span></div>${NT.length?NT.map(n=>`<button class="nti${n.read_at?'':' un'}" data-a="nopen" data-id="${n.id}"><span>${esc(ntText(n))}</span><span class="mut">${ago(n.created_at)}</span></button>`).join(''):'<div class="mut nte">No notifications yet</div>'}</div>`:''}</span>`;
 };
 async function loadNotes(){
     if(!S.me) return;

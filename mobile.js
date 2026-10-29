@@ -1,7 +1,7 @@
 // Mobile page: header, bottom bar and views. Shared logic lives in core.js, loaded first.
 
 const logo='<img class="lgi" src="assets/logo.svg" alt="" width="34" height="24">TeamUp';
-const head=()=>`<div class="in"><button class="logo" data-a="go" data-v="landing" aria-label="TeamUp home">${logo}</button><span class="row" style="flex-wrap:nowrap">${bell()}${sndBtn()}${S.me?'<button class="btn sm" data-a="go" data-v="create">+ New</button>':'<button class="ghost" data-a="openAuth">Sign In / Register</button>'}</span></div>`;
+const head=()=>`<div class="in"><button class="logo" data-a="go" data-v="landing" aria-label="TeamUp home">${logo}</button><span class="row" style="flex-wrap:nowrap">${bell()}${S.me?'<button class="btn sm" data-a="go" data-v="create">+ New</button>':'<button class="ghost sm" data-a="openAuth" data-m="login">Sign in</button><button class="btn sm" data-a="openAuth" data-m="register">Sign up</button>'}</span></div>`;
 
 const bar=()=>{
     const cur={detail:'find',manage:'mine',create:'mine'}[S.view]||S.view;
@@ -13,7 +13,7 @@ const bar=()=>{
 const words=['thesis','hackathon','research paper','startup','course project'];
 
 V.landing=()=>{
-    const cta=S.me?`<button class="btn xl" data-a="go" data-v="create">Create a project</button><button class="ghost xl" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" data-a="openAuth">Sign In / Register</button><button class="ghost xl" data-a="go" data-v="find">Browse projects</button>`;
+    const cta=S.me?`<button class="btn xl" data-a="go" data-v="create">Create a project</button><button class="ghost xl" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" data-a="openAuth" data-m="register">Sign up</button><button class="ghost xl" data-a="go" data-v="find">Browse projects</button>`;
     const mq=['Python','SQL','Figma','React','JavaScript','Docker','Power BI / Tableau','Excel','User Research','Machine Learning','Data Analysis','UI/UX Design'].map(s=>`<span>${s}</span>`).join('<span>✦</span>');
     return `<section class="lh"><i class="blob" data-d="40" style="width:260px;height:260px;right:6%;top:-70px" data-c="1"></i><i class="blob" data-d="-28" style="width:150px;height:150px;right:30%;bottom:-50px" data-c="2"></i><i class="blob" data-d="20" style="width:90px;height:90px;left:52%;top:40px" data-c="3"></i>
 <span class="fl" style="top:16%;right:10%">Python</span><span class="fl" style="top:38%;right:24%">Figma</span><span class="fl" style="top:62%;right:8%">✓ Link provided</span><span class="fl" style="top:76%;right:30%">Hackathon</span><span class="fl" style="top:10%;right:34%">SQL</span>
@@ -33,7 +33,7 @@ ${guide()}
 <div class="card"><h3>Trial first</h3><div class="mut">A small independent task shows skill in action, and works even with AI around.</div></div>
 <div class="card"><h3>Clear statuses</h3><div class="mut">New, on trial, accepted, rejected: always see where everyone stands.</div></div></div></section>
 <section class="sec rv"><div class="card uni"><h2>One university, one community</h2><div style="max-width:680px;line-height:1.5">Sign in with your @astanait.edu.kz email. A data analyst from another programme, a designer from another year: everyone is in the same community, with the same rules.</div><div class="row"><span class="chip">CS</span><span class="chip">SE</span><span class="chip">BDA</span><span class="chip">ITM</span><span class="chip">CSB</span><span class="chip">and more</span></div></div></section>
-<section class="sec rv"><div class="cta"><h2>Stop asking in group chats.</h2><div style="max-width:560px;line-height:1.5">Find the person with the skill you need in minutes.</div><div class="row">${S.me?`<button class="btn xl" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" data-a="openAuth">Sign in with university email</button>`}</div></div></section>
+<section class="sec rv"><div class="cta"><h2>Stop asking in group chats.</h2><div style="max-width:560px;line-height:1.5">Find the person with the skill you need in minutes.</div><div class="row">${S.me?`<button class="btn xl" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" data-a="openAuth" data-m="register">Sign up with university email</button>`}</div></div></section>
 <footer class="ft">TeamUp · student team finder · prototype. All data in the database is synthetic test data.</footer>`;
 };
 
@@ -53,7 +53,7 @@ V.detail=()=>{
     if(!p) return V.find();
     const own=mine(p), done=applied(p);
     const form=own?`<div class="side card w380"><h3>This is your project</h3><div class="mut">Applications: ${p.offers.length}</div><button class="btn" data-a="manage" data-id="${p.id}">Manage applications</button></div>`
-:!S.me?`<div class="side card w380"><h3>Apply to this project</h3><div class="mut">Sign in with your university email to apply.</div><button class="btn" data-a="openAuth">Sign In</button></div>`
+:!S.me?`<div class="side card w380"><h3>Apply to this project</h3><div class="mut">Sign in with your university email to apply.</div><button class="btn" data-a="openAuth">Sign in</button></div>`
 :done?`<div class="side card w380"><h3>Application sent</h3><div class="mut">Track it in My applications. The author's contact opens after acceptance.</div><button class="ghost" data-a="go" data-v="apps">My applications</button></div>`
 :`<div class="side card w380"><h3>Apply</h3>
 <div class="col"><div class="lbl">Skill</div><div class="row">${p.req.concat(p.opt).map(s=>chip(s,R.skill===s,`data-a="rs" data-s="${s}"`)).join('')}</div></div>

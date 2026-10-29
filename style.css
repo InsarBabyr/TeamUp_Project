@@ -321,3 +321,13 @@ img{max-width:100%;height:auto}
 #guide[data-g="1"] { --ga: #0284C7; }
 #guide[data-g="2"] { --ga: #4F46E5; }
 #guide[data-g="3"] { --ga: #1E40AF; }
+
+/* header for guests: plain text links, then Sign in (outline) and Sign up (primary) */
+.nl { min-height: 36px; padding: 0 12px; border: none; background: none; color: var(--ink); font-size: 14px; font-weight: 600; cursor: pointer; border-radius: 10px; }
+.nl:hover, .nl.on { color: var(--lav2); }
+.bar .ghost.sm { min-height: 40px; padding: 0 16px; font-size: 14px; }
+.bar .btn.sm { min-height: 40px; padding: 0 18px; font-size: 14px; }
+/* sound switch inside the notifications panel */
+.nta { gap: 12px; flex-wrap: nowrap; }
+.snd2 { display: inline-flex; align-items: center; gap: 4px; text-decoration: none; color: var(--mut); }
+.snd2 .ic { width: 15px; height: 15px; }

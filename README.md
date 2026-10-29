@@ -16,7 +16,7 @@ An author posts a project with the skills it needs. Other students apply from th
 - **Applications.** Apply with a skill, your level, a link to your work and a short note. Withdraw an application while it is under review or on trial.
 - **Trials.** Authors move candidates through *Under review → On trial → Accepted / Rejected* and can set a trial task with a deadline.
 - **Private contacts.** A Telegram handle is visible only between an author and a candidate they accepted, enforced by the database.
-- **Live notifications.** Authors see new applications and candidates see status changes without reloading, with an optional sound.
+- **Live notifications.** Authors see new applications and candidates see status changes without reloading, with an optional sound (switched on or off in the notifications panel).
 - **Profile.** Name, programme and group, Telegram, availability and skills with levels and links.
 - **Password reset** with a code sent by email.
 - **How-to guide on the home page.** An animated walkthrough with four tabs (create a project, fill in your profile, apply, pick your team): a mock screen shows each step while the explanation is highlighted next to it. Built in HTML/CSS, so it is sharp on any screen, follows the dark theme and weighs a few KB. It plays only while on screen, pauses on hover or focus, steps can be clicked, and with *reduce motion* it does not play by itself.
