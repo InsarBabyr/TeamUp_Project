@@ -29,7 +29,7 @@ An author posts a project with the skills it needs. Other students apply from th
 | Frontend | Plain HTML, CSS and JavaScript, no framework and no build step |
 | Backend | [Supabase](https://supabase.com): PostgreSQL, Auth, Realtime |
 | Security | Row Level Security (RLS) policies on every table |
-| Email | Supabase Auth over Gmail SMTP |
+| Email | Supabase Auth over [Resend](https://resend.com) SMTP, sent from `no-reply@teamupaitu.com` |
 | Files | Supabase Storage (private bucket `project-files`) |
 | Bot protection | Cloudflare Turnstile (CAPTCHA) on sign-in, sign-up and emailed codes |
 | Dev server | [live-server](https://www.npmjs.com/package/live-server) |
@@ -105,7 +105,8 @@ Rules enforced by the database, not only by the page:
 These live in the Supabase dashboard, not in the code:
 
 - **Authentication → Sign In / Providers → Email:** *Confirm email* is on.
-- **Authentication → Emails → SMTP Settings:** custom SMTP (Gmail with an app password). Without it Supabase only emails the project's own team members.
+- **Authentication → Emails → SMTP Settings:** custom SMTP through Resend (`smtp.resend.com`, port 465, user `resend`, a Resend API key with sending access as the password), sender `no-reply@teamupaitu.com`. Without custom SMTP Supabase only emails the project's own team members.
+- **Domain `teamupaitu.com`** (registered at Namecheap, DNS on Cloudflare) exists only for email. Its DNS holds the Resend records (`send`, `rsend`, `resend._domainkey` for SPF and DKIM) and a DMARC record (`_dmarc`). University mail runs on Microsoft 365, which held back codes sent from a Gmail address; mail signed for our own domain reaches the inbox.
 - **Authentication → Emails → Templates:** *Confirm signup* and *Reset Password* contain `{{ .Token }}` (a code, not a link). University mail runs on Microsoft 365, whose Safe Links opens links in emails first and can use up a one-time link before the student clicks it.
 - **Realtime:** the `notifications` table is in the `supabase_realtime` publication (migration 5).
 - **Storage:** the `project-files` bucket (3 MB per file, documents and images only) and its policies are created by migration 8; the free plan has 1 GB. Usage: **Storage → Usage**.
