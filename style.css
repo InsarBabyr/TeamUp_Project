@@ -347,3 +347,8 @@ img{max-width:100%;height:auto}
 .dza { justify-content: flex-end; }
 .dzf, .dzf:hover { background: #DC2626; }
 .dzf:disabled { opacity: .45; cursor: not-allowed; }
+.pww { position: relative; }
+.pww .fld { padding-right: 48px; }
+.pwe { position: absolute; right: 2px; top: 50%; transform: translateY(-50%); width: 44px; height: 44px; border: 0; background: none; color: var(--mut); display: flex; align-items: center; justify-content: center; cursor: pointer; border-radius: 8px; }
+.pwe:hover { color: var(--ink); }
+.pwe:focus-visible { outline: 2px solid var(--lav2); outline-offset: -4px; }

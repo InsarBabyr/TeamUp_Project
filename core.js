@@ -43,11 +43,11 @@ document.body.insertAdjacentHTML('beforeend', `
     </div>
     <div id="pwFields" class="col">
       <label class="lbl" for="authPassword" id="authPwLbl">Password</label>
-      <input id="authPassword" class="fld" data-k="G.pw" type="password" maxlength="72" autocomplete="current-password" placeholder="••••••••">
+      <div class="pww"><input id="authPassword" class="fld" data-k="G.pw" type="password" maxlength="72" autocomplete="current-password" placeholder="••••••••"><button type="button" class="pwe" data-a="pweye" data-f="authPassword" aria-label="Show password" aria-pressed="false"><svg class="ic" aria-hidden="true" focusable="false"><use href="assets/icons.svg#i-eye"></use></svg></button></div>
     </div>
     <div id="pw2Fields" class="col" style="display:none;">
       <label class="lbl" for="authPassword2">Repeat new password</label>
-      <input id="authPassword2" class="fld" type="password" maxlength="72" autocomplete="new-password" placeholder="••••••••">
+      <div class="pww"><input id="authPassword2" class="fld" type="password" maxlength="72" autocomplete="new-password" placeholder="••••••••"><button type="button" class="pwe" data-a="pweye" data-f="authPassword2" aria-label="Show password" aria-pressed="false"><svg class="ic" aria-hidden="true" focusable="false"><use href="assets/icons.svg#i-eye"></use></svg></button></div>
     </div>
     <button id="forgotLink" class="lnk" data-a="setAuth" data-m="forgot">Forgot password?</button>
     <button id="resendLink" class="lnk" data-a="resendCode" style="display:none;">Send the code again</button>
@@ -262,7 +262,15 @@ const A={
     how:()=>{ if(S.view!=='landing') go('landing'); setTimeout(()=>{const e=$('#how'); e&&e.scrollIntoView({behavior:RM?'auto':'smooth'})},50); },
     
     openAuth:d=>{ const reg=!!d&&d.m==='register'; $('#authModal').classList.add('visible'); A.setAuth({m:reg?'register':'login'}); capRender(); setTimeout(()=>$(reg?'#authName':'#authEmail').focus(),50); },
-    closeAuth:()=>{ $('#authModal').classList.remove('visible'); $('#authPassword').value=''; $('#authPassword2').value=''; $('#authCode').value=''; G.pw=''; RCV=false; },
+    // show or hide what was typed in a password field
+    pweye:d=>{
+        const f=$('#'+d.f), b=document.querySelector(`.pwe[data-f="${d.f}"]`), show=f.type==='password';
+        f.type=show?'text':'password';
+        b.setAttribute('aria-pressed',show); b.setAttribute('aria-label',show?'Hide password':'Show password');
+        b.querySelector('use').setAttribute('href','assets/icons.svg#i-'+(show?'eye-off':'eye'));
+    },
+    closeAuth:()=>{ ['authPassword','authPassword2'].forEach(id=>{ if($('#'+id).type!=='password') A.pweye({f:id}); });
+        $('#authModal').classList.remove('visible'); $('#authPassword').value=''; $('#authPassword2').value=''; $('#authCode').value=''; G.pw=''; RCV=false; },
     setAuth:d=>{
         const m = d.m, isReg = m === 'register', isRec = m === 'forgot' || m === 'reset' || m === 'confirm', show = (id, on) => { $(id).style.display = on ? '' : 'none'; };
         show('#authTabs', !isRec);
