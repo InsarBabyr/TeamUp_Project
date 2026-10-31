@@ -52,6 +52,7 @@ document.body.insertAdjacentHTML('beforeend', `
     <button id="forgotLink" class="lnk" data-a="setAuth" data-m="forgot">Forgot password?</button>
     <button id="resendLink" class="lnk" data-a="resendCode" style="display:none;">Send the code again</button>
     <button id="backLink" class="lnk" data-a="setAuth" data-m="login" style="display:none;">← Back to sign in</button>
+    <div id="privHint" class="mut" style="display:none;">By signing up you agree to how we handle your data: <a href="privacy.html" target="_blank" rel="noopener">Privacy notice</a>.</div>
     <div id="captcha" class="cap"></div>
     <button class="btn" data-a="submitAuth" id="authBtn" data-mode="login" style="margin-top:8px;">Sign in</button>
   </div>
@@ -241,6 +242,7 @@ const A={
         const m = d.m, isReg = m === 'register', isRec = m === 'forgot' || m === 'reset' || m === 'confirm', show = (id, on) => { $(id).style.display = on ? '' : 'none'; };
         show('#authTabs', !isRec);
         show('#regFields', isReg);
+        show('#privHint', isReg);
         show('#authHint', isRec);
         show('#codeFields', m === 'reset' || m === 'confirm');
         show('#pwFields', m !== 'forgot' && m !== 'confirm');

@@ -359,3 +359,4 @@ img{max-width:100%;height:auto}
 .dem-b { background: #E2E8F0; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dem-b { background: #334155; } :root:not([data-theme="light"]) .dem-b i { background: #60A5FA; } }
 :root[data-theme="dark"] .dem-b { background: #334155; } :root[data-theme="dark"] .dem-b i { background: #60A5FA; }
+.ft a { color: inherit; text-decoration: underline; display: inline-flex; align-items: center; min-height: 44px; padding: 0 4px; }

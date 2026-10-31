@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TeamUp: privacy notice</title>
+<link rel="icon" type="image/svg+xml" href="assets/logo.svg">
+<link href="https://fonts.googleapis.com/css2?family=Onest:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root { --bg: #FFFFFF; --ink: #0F172A; --mut: #475569; --ln: #E2E8F0; --lav: #EFF6FF; --acc: #2563EB; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0B1220; --ink: #E2E8F0; --mut: #94A3B8; --ln: #1E293B; --lav: #111C33; --acc: #60A5FA; }
+}
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.6 'Onest', Arial, sans-serif; }
+main { max-width: 760px; margin: 0 auto; padding: 32px 16px 56px; }
+a { color: var(--acc); }
+h1 { font-size: 28px; line-height: 1.25; margin: 16px 0 4px; }
+h2 { font-size: 19px; margin: 32px 0 8px; }
+.mut { color: var(--mut); font-size: 14px; }
+.back { display: inline-flex; align-items: center; min-height: 44px; font-weight: 600; text-decoration: none; }
+.box { background: var(--lav); border-radius: 12px; padding: 14px 16px; }
+ul { padding-left: 22px; }
+li { margin: 4px 0; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tbl th, .tbl td { text-align: left; vertical-align: top; padding: 8px 10px; border-bottom: 1px solid var(--ln); }
+.tbl th { font-weight: 600; }
+@media (max-width: 560px) {
+  .tbl, .tbl tbody, .tbl tr, .tbl td { display: block; }
+  .tbl thead { display: none; }
+  .tbl tr { border-bottom: 1px solid var(--ln); padding: 8px 0; }
+  .tbl td { border: 0; padding: 2px 0; }
+  .tbl td:first-child { font-weight: 600; }
+}
+</style>
+</head>
+<body>
+<main>
+<a class="back" href="./">← Back to TeamUp</a>
+<h1>Privacy notice</h1>
+<p class="mut">Last updated: 31 October 2026</p>
+
+<p class="box">TeamUp is a student project made at Astana IT University to help students find teammates. It is a prototype: it shows no ads, sells no data and uses no analytics or tracking.
+Questions or requests: <a href="mailto:teamupaitu@gmail.com">teamupaitu@gmail.com</a>.</p>
+
+<h2>What we store</h2>
+<ul>
+<li><b>Account:</b> your university e-mail address. Your password is stored only as a hash by our login service (Supabase Auth); we never see it.</li>
+<li><b>Profile:</b> first and last name, study programme and group, how soon you are available.</li>
+<li><b>Skills:</b> the skills you choose, your level in each, and an optional link to your work and a short note.</li>
+<li><b>Telegram handle</b>, if you add one.</li>
+<li><b>Projects you publish:</b> their text, skills, links and up to three files.</li>
+<li><b>Applications:</b> the project, your note, link and the current status.</li>
+<li><b>Notifications</b> about applications and status changes; they are deleted after 60 days.</li>
+</ul>
+
+<h2>Who can see it</h2>
+<table class="tbl">
+<thead><tr><th>Data</th><th>Who can see it</th></tr></thead>
+<tbody>
+<tr><td>E-mail address</td><td>Only you. It is never shown to other users.</td></tr>
+<tr><td>Profile and skills</td><td>Students signed in to TeamUp.</td></tr>
+<tr><td>Telegram handle</td><td>You, and the other person in an application that was accepted (the author or the accepted candidate).</td></tr>
+<tr><td>Projects</td><td>Open projects: students signed in to TeamUp. Closed projects and assembled teams: the author and the students who applied.</td></tr>
+<tr><td>Project files</td><td>Students who can see the project, through download links that expire after one hour.</td></tr>
+<tr><td>Applications</td><td>The candidate and the author of the project.</td></tr>
+<tr><td>Notifications</td><td>Only you.</td></tr>
+</tbody>
+</table>
+<p>Visitors who are not signed in cannot read any of this. These rules are enforced by the database itself (row level security), not only by the page.</p>
+
+<h2>Services that process data for us</h2>
+<ul>
+<li><b>Supabase:</b> database, sign-in and file storage (servers in Seoul, South Korea).</li>
+<li><b>Resend:</b> sends the confirmation and password reset codes to your e-mail (servers in Ireland).</li>
+<li><b>Cloudflare Turnstile:</b> the "verify you are human" check on sign-in and sign-up.</li>
+<li><b>GitHub Pages:</b> hosts the website.</li>
+<li><b>Google Fonts and jsDelivr:</b> deliver the font and the Supabase library to your browser.</li>
+</ul>
+<p>Like any website, these services receive your IP address when your browser connects to them.</p>
+
+<h2>What is kept in your browser</h2>
+<ul>
+<li>Your sign-in session, so you stay signed in.</li>
+<li>Whether notification sound is on.</li>
+<li>A count of your recent actions, used to slow down spam.</li>
+</ul>
+<p>There are no advertising or tracking cookies.</p>
+
+<h2>Your choices</h2>
+<ul>
+<li>Change your profile, skills and Telegram handle at any time in <b>Profile</b>.</li>
+<li>Withdraw an application while it is under review or on trial.</li>
+<li>Close your project, or mark the team as assembled.</li>
+<li>To delete your account and everything linked to it, write to <a href="mailto:teamupaitu@gmail.com">teamupaitu@gmail.com</a> from your university address. We delete it within 7 days.</li>
+</ul>
+
+<h2>Why we store it</h2>
+<p>Only to run TeamUp: to let you sign in, show your skills to project authors, match you with projects and tell you about your applications. We follow the principles of the Law of the Republic of Kazakhstan "On Personal Data and Their Protection": we collect only what the service needs, show it only to the people who need it, and delete it on request.</p>
+</main>
+</body>
+</html>

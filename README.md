@@ -20,6 +20,7 @@ An author posts a project with the skills it needs. Other students apply from th
 - **Profile.** Name, programme and group, Telegram, availability and skills with levels and links.
 - **Password reset** with a code sent by email.
 - **How-to guide on the home page.** An animated walkthrough with four tabs (create a project, fill in your profile, apply, pick your team): a mock screen shows each step while the explanation is highlighted next to it. Built in HTML/CSS, so it is sharp on any screen, follows the dark theme and weighs a few KB. It plays only while on screen, pauses on hover or focus, steps can be clicked, and with *reduce motion* it does not play by itself.
+- **Privacy notice** (`privacy.html`): what the site stores, who can see it, which services process it and how to delete an account. Linked from the footer and the sign-up form.
 - **Two layouts.** A desktop version (`index.html`) and a mobile version (`mobile.html`). Phones are redirected to the mobile one automatically.
 
 ## Tech stack
@@ -57,6 +58,7 @@ The app talks to the Supabase project set at the top of `app.js` and `mobile.js`
 ```
 index.html        desktop page (redirects phones to mobile.html)
 mobile.html       mobile page
+privacy.html      privacy notice (static page)
 core.js           shared by both pages: Supabase, state, sign-in, actions, data loading,
                   notifications, animations, and the views that look the same in both
 app.js            desktop header and views

@@ -44,7 +44,7 @@ ${guide()}
 <div class="card role-a"><span class="pill" style="align-self:flex-start;color:var(--ink)">Author</span><h3>You post a project</h3><div>Publish your thesis, research or hackathon idea, review applicants, accept to a trial, build the team.</div></div>
 <div class="card role-c"><span class="pill" style="align-self:flex-start;color:var(--ink)">Candidate</span><h3>You join someone else's</h3><div>Apply to other students' projects from the same profile. You can be both at once, but never apply to your own.</div></div></div></section>
 <section class="sec"><div class="cta" style="align-items:center; text-align:center;"><h2>Stop asking in group chats.</h2><div style="max-width:560px;line-height:1.5; font-size:16px;">Find the person with the skill you need in minutes.</div><div class="row">${S.me?`<button class="btn xl" style="background:var(--card);color:var(--ink);" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" style="background:var(--card);color:var(--ink);" data-a="openAuth" data-m="register">Sign up with university email</button>`}</div></div></section>
-<footer class="ft">TeamUp · student team finder · prototype. All data in the database is synthetic test data.</footer>`;
+<footer class="ft">TeamUp · student team finder · prototype. All data in the database is synthetic test data. · <a href="privacy.html">Privacy</a></footer>`;
 };
 
 V.find=()=>{

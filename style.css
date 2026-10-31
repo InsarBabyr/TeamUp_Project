@@ -341,3 +341,4 @@ img{max-width:100%;height:auto}
 .dem-b { height: 8px; border-radius: 4px; background: var(--ln); overflow: hidden; }
 .dem-b i { display: block; height: 100%; border-radius: 0 4px 4px 0; background: #2563EB; }
 .demr b { text-align: right; font-variant-numeric: tabular-nums; }
+.ft a { color: inherit; text-decoration: underline; }

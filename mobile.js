@@ -34,7 +34,7 @@ ${guide()}
 <div class="card"><h3>Clear statuses</h3><div class="mut">New, on trial, accepted, rejected: always see where everyone stands.</div></div></div></section>
 <section class="sec rv"><div class="card uni"><h2>One university, one community</h2><div style="max-width:680px;line-height:1.5">Sign in with your @astanait.edu.kz email. A data analyst from another programme, a designer from another year: everyone is in the same community, with the same rules.</div><div class="row"><span class="chip">CS</span><span class="chip">SE</span><span class="chip">BDA</span><span class="chip">ITM</span><span class="chip">CSB</span><span class="chip">and more</span></div></div></section>
 <section class="sec rv"><div class="cta"><h2>Stop asking in group chats.</h2><div style="max-width:560px;line-height:1.5">Find the person with the skill you need in minutes.</div><div class="row">${S.me?`<button class="btn xl" data-a="go" data-v="find">Browse projects</button>`:`<button class="btn xl" data-a="openAuth" data-m="register">Sign up with university email</button>`}</div></div></section>
-<footer class="ft">TeamUp · student team finder · prototype. All data in the database is synthetic test data.</footer>`;
+<footer class="ft">TeamUp · student team finder · prototype. All data in the database is synthetic test data. · <a href="privacy.html">Privacy</a></footer>`;
 };
 
 V.find=()=>{
