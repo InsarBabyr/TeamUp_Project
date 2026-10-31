@@ -58,6 +58,26 @@ document.body.insertAdjacentHTML('beforeend', `
   </div>
 </div>`);
 
+// Delete account: a small window like the sign-in one; Delete for good stays disabled until DELETE is typed
+document.body.insertAdjacentHTML('beforeend', `
+<div id="delModal" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="delModalTitle">
+  <div class="modal-card" style="max-width:380px;">
+    <div class="top" style="align-items:center;">
+      <h2 id="delModalTitle" style="font-size:20px;margin:0;">Delete account?</h2>
+      <button class="ghost sm" data-a="delno" aria-label="Close" style="min-height:32px;padding:0 8px;border-radius:8px;">✕</button>
+    </div>
+    <p class="mut" style="margin:0;">This removes your account, profile, skills, Telegram, your projects with their files and applications, and your applications to other projects. It cannot be undone.</p>
+    <div class="col">
+      <label class="lbl" for="delw">Type DELETE to confirm</label>
+      <input id="delw" class="fld" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="DELETE">
+    </div>
+    <div class="row dza">
+      <button class="ghost" data-a="delno">Cancel</button>
+      <button class="btn dzf" id="delgo" data-a="delgo" disabled>Delete for good</button>
+    </div>
+  </div>
+</div>`);
+
 let S={projects:[],me:null,view:'landing',pid:null,op:null,tab:'new',ready:false};
 const F={skills:[],type:'All',novice:false,urgent:false,fit:false,hide:false,q:'',sort:'match'};
 const nR=()=>({skill:'',level:1,link:'',did:'',when:'Today',tg:''});
@@ -132,11 +152,10 @@ function tok(n){
     return ok;
 }
 
-// Profile: delete the account for good (the privacy notice promises it). The red button stays
-// disabled until the user types DELETE, so one stray tap deletes nothing.
-let DELO=false, DELT='';
+// Profile: delete the account for good (the privacy notice promises it); confirmed in #delModal
+let DELT='';
 const delOk=()=>DELT.trim().toUpperCase()==='DELETE';
-const delBox=()=>`<div class="col dz"><div class="lbl">Delete account</div><span class="mut">Removes your account, profile, skills, Telegram, your projects with their files and applications, and your applications to other projects. This cannot be undone. <a href="privacy.html">Privacy notice</a></span>${DELO?`<label class="lbl" for="delw">Type DELETE to confirm</label><input id="delw" class="fld" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="DELETE" value="${esc(DELT)}"><div class="row"><button class="ghost dzb" id="delgo" data-a="delgo"${delOk()?'':' disabled'}>Delete for good</button><button class="ghost" data-a="delno">Cancel</button></div>`:'<button class="ghost dzb" data-a="delacc">Delete my account</button>'}</div>`;
+const delBox=()=>`<div class="col dz"><div class="lbl">Delete account</div><span class="mut">Removes your account, profile, skills, Telegram, your projects with their files and applications, and your applications to other projects. This cannot be undone. <a href="privacy.html">Privacy notice</a></span><button class="ghost dzb" data-a="delacc">Delete my account</button></div>`;
 
 // project status as shown to people
 const pst=s=>s==='assembled'?'Team assembled':s==='closed'?'Project closed':'Open';
@@ -368,8 +387,8 @@ const A={
         } finally { btn.disabled=false; }
     },
     
-    delacc:()=>{DELO=true; DELT=''; render(false); const i=$('#delw'); if(i) i.focus();},
-    delno:()=>{DELO=false; DELT=''; render(false);},
+    delacc:()=>{ DELT=''; $('#delw').value=''; const b=$('#delgo'); b.disabled=true; b.textContent='Delete for good'; $('#delModal').classList.add('visible'); setTimeout(()=>$('#delw').focus(),50); },
+    delno:()=>{ $('#delModal').classList.remove('visible'); DELT=''; $('#delw').value=''; },
     delgo:async()=>{
         if(!delOk()||!tok('cl')) return;
         const bt=$('#delgo'); if(bt){ bt.disabled=true; bt.textContent='Deleting…'; }
@@ -384,7 +403,7 @@ const A={
         }
         const r=await sb.rpc('delete_my_account');
         if(r.error) return fail(r.error);
-        DELO=false; DELT='';
+        A.delno();
         await sb.removeAllChannels(); live=null; NT=[]; NOPEN=false;
         await sb.auth.signOut({scope:'local'}); S.me=null; S.projects=[]; toast('Your account has been deleted'); go('landing');
     },
@@ -538,6 +557,12 @@ document.addEventListener('input',e=>{
 
 document.addEventListener('keydown',e=>{
     if(e.key==='Escape'&&NOPEN){ NOPEN=false; render(false); return; }
+    const dm=$('#delModal');
+    if(dm&&dm.classList.contains('visible')){
+        if(e.key==='Escape') A.delno();
+        else if(e.key==='Enter'&&e.target.id==='delw'&&delOk()) A.delgo().catch(x=>{console.error(x); toast('Something went wrong. Try again.');});
+        return;
+    }
     const m=$('#authModal');
     if(!m||!m.classList.contains('visible')) return;
     if(e.key==='Escape') A.closeAuth();
