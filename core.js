@@ -132,6 +132,9 @@ function tok(n){
     return ok;
 }
 
+// Profile: delete the account for good (the privacy notice promises it)
+const delBox=()=>`<div class="col dz"><div class="lbl">Delete account</div><span class="mut">Removes your account, profile, skills, Telegram, your projects with their files and applications, and your applications to other projects. This cannot be undone. <a href="privacy.html">Privacy notice</a></span><button class="ghost dzb" data-a="delacc">Delete my account</button></div>`;
+
 // project status as shown to people
 const pst=s=>s==='assembled'?'Team assembled':s==='closed'?'Project closed':'Open';
 // "Most wanted skills" on Find: how many open projects need each skill; a click filters by it
@@ -362,6 +365,24 @@ const A={
         } finally { btn.disabled=false; }
     },
     
+    delacc:async()=>{
+        const t=prompt('This deletes your account, your projects with their files and all applications for good. Type DELETE to confirm.');
+        if(t===null) return;
+        if(t.trim().toUpperCase()!=='DELETE') return toast('Account not deleted: type DELETE to confirm');
+        if(!tok('cl')) return;
+        // files first: Supabase removes them only through the Storage API, and the database refuses while any are left
+        const pr=await sb.from('projects').select('id').eq('author_id',S.me.uid);
+        if(pr.error) return dberr(pr.error);
+        for(const p of pr.data){
+            const l=await sb.storage.from(BUCKET).list(p.id,{limit:100});
+            if(l.error) return dberr(l.error);
+            if(l.data.length){ const r=await sb.storage.from(BUCKET).remove(l.data.map(f=>`${p.id}/${f.name}`)); if(r.error) return dberr(r.error); }
+        }
+        const r=await sb.rpc('delete_my_account');
+        if(r.error) return dberr(r.error);
+        await sb.removeAllChannels(); live=null; NT=[]; NOPEN=false;
+        await sb.auth.signOut({scope:'local'}); S.me=null; S.projects=[]; toast('Your account has been deleted'); go('landing');
+    },
     out:async()=>{await sb.removeAllChannels(); live=null; NT=[]; NOPEN=false; await sb.auth.signOut(); S.me=null; S.projects=[]; toast('Signed out'); go('landing')},
     open:d=>{
         S.pid=d.id;

@@ -17,7 +17,7 @@ An author posts a project with the skills it needs. Other students apply from th
 - **Trials.** Authors move candidates through *Under review → On trial → Accepted / Rejected* and can set a trial task with a deadline.
 - **Private contacts.** A Telegram handle is visible only between an author and a candidate they accepted, enforced by the database.
 - **Live notifications.** Authors see new applications and candidates see status changes without reloading, with an optional sound (switched on or off in the notifications panel).
-- **Profile.** Name, programme and group, Telegram, availability and skills with levels and links.
+- **Profile.** Name, programme and group, Telegram, availability and skills with levels and links. **Delete my account** removes the account and everything linked to it.
 - **Password reset** with a code sent by email.
 - **How-to guide on the home page.** An animated walkthrough with four tabs (create a project, fill in your profile, apply, pick your team): a mock screen shows each step while the explanation is highlighted next to it. Built in HTML/CSS, so it is sharp on any screen, follows the dark theme and weighs a few KB. It plays only while on screen, pauses on hover or focus, steps can be clicked, and with *reduce motion* it does not play by itself.
 - **Privacy notice** (`privacy.html`): what the site stores, who can see it, which services process it and how to delete an account. Linked from the footer and the sign-up form.
@@ -93,6 +93,7 @@ Rules enforced by the database, not only by the page:
 - You cannot apply to your own project or to a closed one, and only once per project.
 - Only the project author can change an application's status. Its project and candidate cannot be changed (trigger `lock_application_fields`).
 - At most 10 new projects and 20 applications per user per day (triggers `limit_projects_per_day`, `limit_applications_per_day`).
+- A user can delete only their own account (function `delete_my_account`, migration 10); everything linked to it goes with it through `on delete cascade`. Project files are removed first through the Storage API, and the function refuses while any are left.
 - Applying is one transaction (function `apply_to_project`): the skill, contact, availability and application are saved together or not at all.
 
 ### Schema and migrations

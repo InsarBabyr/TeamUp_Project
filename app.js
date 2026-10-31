@@ -171,7 +171,8 @@ V.profile=()=>{
 <div class="col"><div class="lbl">My skills <span class="mut">(${sel.length}/${MAXMS})</span></div><div class="row">${m.skills.length?m.skills.map(x=>xchip(x.s,'on',null,'data-a="psk"',x.s)).join(''):'<span class="mut">No skills added yet. Choose a category below.</span>'}</div></div>
 <div class="col"><label class="lbl" for="pcat">Add a skill</label><select id="pcat" class="fld" data-c="pcat"><option value=""${PCAT?'':' selected'} disabled hidden>Select a category…</option>${cats().map(c=>`<option value="${esc(c.name)}"${c.name===PCAT?' selected':''}>${esc(c.name)}</option>`).join('')}</select><div class="row">${list.map(s=>chip('+ '+s,0,`data-a="psk" data-s="${esc(s)}"`)).join('')}</div></div>
 ${m.skills.map((x,i)=>`<div class="card"><div class="top"><b>${esc(x.s)}</b><button class="ghost" data-a="prm" data-i="${i}">Remove</button></div><div class="row">${LV.map((l,j)=>chip(l,x.level===j,`data-a="plv" data-i="${i}" data-j="${j}"`)).join('')}</div><input class="fld" data-pl="${i}" maxlength="300" placeholder="Link to your work (GitHub, Figma…)" aria-label="Link for ${esc(x.s)}" value="${esc(x.link)}"></div>`).join('')}
-<button class="ghost" style="align-self:flex-start; margin-top:16px; border-color:#FCA5A5; color:#B91C1C;" data-a="out">Sign Out</button></div></div>`;
+<button class="ghost" style="align-self:flex-start; margin-top:16px; border-color:#FCA5A5; color:#B91C1C;" data-a="out">Sign Out</button>
+${delBox()}</div></div>`;
 };
 
 function render(top){
