@@ -132,8 +132,11 @@ function tok(n){
     return ok;
 }
 
-// Profile: delete the account for good (the privacy notice promises it)
-const delBox=()=>`<div class="col dz"><div class="lbl">Delete account</div><span class="mut">Removes your account, profile, skills, Telegram, your projects with their files and applications, and your applications to other projects. This cannot be undone. <a href="privacy.html">Privacy notice</a></span><button class="ghost dzb" data-a="delacc">Delete my account</button></div>`;
+// Profile: delete the account for good (the privacy notice promises it). The red button stays
+// disabled until the user types DELETE, so one stray tap deletes nothing.
+let DELO=false, DELT='';
+const delOk=()=>DELT.trim().toUpperCase()==='DELETE';
+const delBox=()=>`<div class="col dz"><div class="lbl">Delete account</div><span class="mut">Removes your account, profile, skills, Telegram, your projects with their files and applications, and your applications to other projects. This cannot be undone. <a href="privacy.html">Privacy notice</a></span>${DELO?`<label class="lbl" for="delw">Type DELETE to confirm</label><input id="delw" class="fld" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="10" placeholder="DELETE" value="${esc(DELT)}"><div class="row"><button class="ghost dzb" id="delgo" data-a="delgo"${delOk()?'':' disabled'}>Delete for good</button><button class="ghost" data-a="delno">Cancel</button></div>`:'<button class="ghost dzb" data-a="delacc">Delete my account</button>'}</div>`;
 
 // project status as shown to people
 const pst=s=>s==='assembled'?'Team assembled':s==='closed'?'Project closed':'Open';
@@ -365,21 +368,23 @@ const A={
         } finally { btn.disabled=false; }
     },
     
-    delacc:async()=>{
-        const t=prompt('This deletes your account, your projects with their files and all applications for good. Type DELETE to confirm.');
-        if(t===null) return;
-        if(t.trim().toUpperCase()!=='DELETE') return toast('Account not deleted: type DELETE to confirm');
-        if(!tok('cl')) return;
+    delacc:()=>{DELO=true; DELT=''; render(false); const i=$('#delw'); if(i) i.focus();},
+    delno:()=>{DELO=false; DELT=''; render(false);},
+    delgo:async()=>{
+        if(!delOk()||!tok('cl')) return;
+        const bt=$('#delgo'); if(bt){ bt.disabled=true; bt.textContent='Deleting…'; }
+        const fail=e=>{ if(bt){ bt.disabled=false; bt.textContent='Delete for good'; } return dberr(e); };
         // files first: Supabase removes them only through the Storage API, and the database refuses while any are left
         const pr=await sb.from('projects').select('id').eq('author_id',S.me.uid);
-        if(pr.error) return dberr(pr.error);
+        if(pr.error) return fail(pr.error);
         for(const p of pr.data){
             const l=await sb.storage.from(BUCKET).list(p.id,{limit:100});
-            if(l.error) return dberr(l.error);
-            if(l.data.length){ const r=await sb.storage.from(BUCKET).remove(l.data.map(f=>`${p.id}/${f.name}`)); if(r.error) return dberr(r.error); }
+            if(l.error) return fail(l.error);
+            if(l.data.length){ const r=await sb.storage.from(BUCKET).remove(l.data.map(f=>`${p.id}/${f.name}`)); if(r.error) return fail(r.error); }
         }
         const r=await sb.rpc('delete_my_account');
-        if(r.error) return dberr(r.error);
+        if(r.error) return fail(r.error);
+        DELO=false; DELT='';
         await sb.removeAllChannels(); live=null; NT=[]; NOPEN=false;
         await sb.auth.signOut({scope:'local'}); S.me=null; S.projects=[]; toast('Your account has been deleted'); go('landing');
     },
@@ -528,6 +533,7 @@ document.addEventListener('input',e=>{
     if(t.dataset.l){ const[i,k]=t.dataset.l.split(':'); if(C.links[+i]) C.links[+i][k]=t.value; }
     if(t.dataset.pl!==undefined&&S.me){ S.me.skills[+t.dataset.pl].link=cl(t.value,300); queueLink(+t.dataset.pl); }
     if(t.id==='q'){ F.q=t.value; const g=$('#grid'); if(g) g.innerHTML=grid(); }
+    if(t.id==='delw'){ DELT=t.value; const b=$('#delgo'); if(b) b.disabled=!delOk(); }
 });
 
 document.addEventListener('keydown',e=>{

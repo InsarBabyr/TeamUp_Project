@@ -364,3 +364,4 @@ img{max-width:100%;height:auto}
 .dzb { align-self: flex-start; border-color: #FCA5A5; color: #B91C1C; }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dzb { color: #FCA5A5; border-color: #7F1D1D; } }
 :root[data-theme="dark"] .dzb { color: #FCA5A5; border-color: #7F1D1D; }
+.dzb:disabled { opacity: .45; cursor: not-allowed; }

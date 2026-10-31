@@ -344,3 +344,4 @@ img{max-width:100%;height:auto}
 .ft a { color: inherit; text-decoration: underline; }
 .dz { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--ln); }
 .dzb { align-self: flex-start; border-color: #FCA5A5; color: #B91C1C; }
+.dzb:disabled { opacity: .45; cursor: not-allowed; }
