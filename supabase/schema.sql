@@ -4,7 +4,7 @@
 --
 -- Not in this file (they live in the dashboard): Auth settings, SMTP and email templates.
 -- See "Supabase settings the app relies on" in README.md.
--- Exported 2026-10-28, updated with migrations 6 to 9.
+-- Exported 2026-10-28, updated with migrations 6 to 11.
 
 begin;
 
@@ -318,7 +318,7 @@ begin
 end;
 $$;
 
--- security definer: when a team is assembled, notifies everyone who applied
+-- security definer: when a team is assembled, notifies everyone who applied (once per project)
 create or replace function private.notify_assembled()
 returns trigger
 language plpgsql
@@ -331,7 +331,11 @@ begin
     insert into notifications (user_id, kind, project_id, project_title, status)
     select a.candidate_id, 'assembled', new.id, new.title, a.status
     from applications a
-    where a.project_id = new.id;
+    where a.project_id = new.id
+      and not exists (
+        select 1 from notifications n
+        where n.user_id = a.candidate_id and n.project_id = new.id and n.kind = 'assembled'
+      );
   end if;
   return null;
 end;
@@ -390,6 +394,13 @@ grant  execute on function private.has_applied(uuid) to authenticated;
 create trigger university_email_only
   before insert on auth.users
   for each row execute function public.enforce_university_email();
+
+-- the same check when the email is changed later
+create trigger university_email_only_on_change
+  before update of email on auth.users
+  for each row
+  when (new.email is distinct from old.email)
+  execute function public.enforce_university_email();
 
 create trigger projects_daily_limit
   before insert on public.projects
@@ -486,6 +497,9 @@ create policy "applications update by author" on public.applications for update 
   using (exists (select 1 from projects p where p.id = applications.project_id and p.author_id = auth.uid()))
   with check (exists (select 1 from projects p where p.id = applications.project_id and p.author_id = auth.uid()));
 create policy "applications withdraw" on public.applications for delete to authenticated using (candidate_id = auth.uid());
+-- the author changes only the status, not the candidate's note or other fields
+revoke update on public.applications from anon, authenticated;
+grant update (status) on public.applications to authenticated;
 
 -- Notifications: read your own and mark them read; rows come only from the trigger
 create policy "notifications read own" on public.notifications for select to authenticated using (user_id = auth.uid());

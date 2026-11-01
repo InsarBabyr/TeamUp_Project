@@ -89,9 +89,10 @@ Both pages load `core.js` first and then their own file. Logic and data changes 
 
 Rules enforced by the database, not only by the page:
 
-- Only `@astanait.edu.kz` addresses can register (trigger `enforce_university_email` on `auth.users`).
+- Only `@astanait.edu.kz` addresses can register or change their email to another one (triggers on `auth.users` using `enforce_university_email`).
 - You cannot apply to your own project or to a closed one, and only once per project.
-- Only the project author can change an application's status. Its project and candidate cannot be changed (trigger `lock_application_fields`).
+- Only the project author can change an application, and only its status (column-level grant, migration 11). Its project and candidate cannot be changed (trigger `lock_application_fields`).
+- "Team assembled" notifies each candidate once per project, even if the project is reopened and assembled again.
 - At most 10 new projects and 20 applications per user per day (triggers `limit_projects_per_day`, `limit_applications_per_day`).
 - A user can delete only their own account (function `delete_my_account`, migration 10); everything linked to it goes with it through `on delete cascade`. Project files are removed first through the Storage API, and the function refuses while any are left.
 - Applying is one transaction (function `apply_to_project`): the skill, contact, availability and application are saved together or not at all.
@@ -100,6 +101,7 @@ Rules enforced by the database, not only by the page:
 
 - **`supabase/schema.sql`** is the full current database: tables, constraints, functions, triggers, RLS policies, Realtime and the catalogue data (skill categories, skills, study programmes). No user data. To restore the database into a new, empty Supabase project, run this file alone in **SQL Editor**, then set up the dashboard settings listed below.
 - **`supabase/migrations/`** is the history of changes made after the initial setup, numbered in the order they were applied. `schema.sql` already includes them. Run a *new* migration in **SQL Editor** on the live project, and update `schema.sql` to match.
+- **`supabase/rollback/`** holds the SQL that undoes a migration with the same name, in case it has to be reverted.
 
 `.gitignore` ignores `*.sql` files (database dumps can contain test data) except the migrations folder.
 

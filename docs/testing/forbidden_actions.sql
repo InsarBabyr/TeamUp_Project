@@ -1,6 +1,7 @@
 -- Success criterion 3 (Stage 1): "Data protection: the rules block actions that are not allowed".
 -- Run the whole file in Supabase -> SQL Editor. It acts as real users picked from the database,
--- tries the 6 forbidden actions from Stage 1 and 6 normal ones, and shows PASS / FAIL for each.
+-- tries the 6 forbidden actions from Stage 1, the checks added by migration 11 and the normal
+-- actions, and shows PASS / FAIL for each.
 -- Nothing is saved: every attempt is undone right after it runs; only its outcome is kept in a
 -- temporary table, shown at the end.
 
@@ -12,14 +13,16 @@ grant all on res to authenticated, anon;
 --   kind 'rows'   = UPDATE/DELETE: RLS hides rows, so a blocked change shows as 0 rows changed
 --   kind 'read'   = SELECT count(*): a blocked read shows as 0 rows visible
 --   kind 'insert' = INSERT: a blocked insert raises an error
+--   kind 'once'   = SELECT returning a count that must be exactly 1
 create or replace function pg_temp.attempt(p_n text, p_action text, p_expected text, p_kind text, p_sql text)
 returns void language plpgsql as $$
 declare n int; ok boolean; outcome text;
 begin
   begin
     if p_kind = 'read' then execute p_sql into n; else execute p_sql; get diagnostics n = row_count; end if;
-    ok := n > 0;
-    outcome := case p_kind when 'read' then n || ' rows visible' when 'insert' then 'saved' else n || ' rows changed' end;
+    ok := case when p_kind = 'once' then n = 1 else n > 0 end;
+    outcome := case p_kind when 'read' then n || ' rows visible' when 'insert' then 'saved'
+                           when 'once' then n || ' notification(s)' else n || ' rows changed' end;
     raise exception using errcode = 'P0U01';             -- undo the attempt
   exception
     when sqlstate 'P0U01' then null;
@@ -95,6 +98,35 @@ reset role;
 -- sign-up itself (the trigger on auth.users)
 select pg_temp.attempt('6a', 'Sign up with a non-university e-mail', 'denied', 'insert',
   $q$insert into auth.users (id, email) values (gen_random_uuid(), 'someone@gmail.com')$q$);
+
+-- ===== added by migration 11 =====
+
+-- as A, the author of P: may change only the status of B's application, not B's note
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('t.a'), 'role', 'authenticated')::text, false);
+set role authenticated;
+select pg_temp.attempt('7', 'Author edits the candidate''s note in an application', 'denied', 'rows',
+  $q$update applications set note = 'edited by the author' where id = current_setting('t.app')::uuid$q$);
+reset role;
+
+-- changing the email later (the second trigger on auth.users)
+select pg_temp.attempt('8', 'Change the email to a non-university one', 'denied', 'rows',
+  $q$update auth.users set email = 'someone@gmail.com' where id = current_setting('t.b')::uuid$q$);
+select pg_temp.attempt('N7', 'Change the email to another university one', 'allowed', 'rows',
+  $q$update auth.users set email = 'test.change@astanait.edu.kz' where id = current_setting('t.b')::uuid$q$);
+
+-- "Team assembled" twice (assembled -> open -> assembled): B is notified once, not twice
+create or replace function pg_temp.assemble_twice(pid uuid, cand uuid)
+returns int language plpgsql as $$
+declare n int;
+begin
+  update projects set status = 'assembled' where id = pid;
+  update projects set status = 'open'      where id = pid;
+  update projects set status = 'assembled' where id = pid;
+  select count(*) into n from notifications where user_id = cand and project_id = pid and kind = 'assembled';
+  return n;
+end $$;
+select pg_temp.attempt('N8', 'Team assembled twice notifies each candidate once', 'allowed', 'once',
+  $q$select pg_temp.assemble_twice(current_setting('t.p')::uuid, current_setting('t.b')::uuid)$q$);
 
 -- ===== the normal actions still work =====
 

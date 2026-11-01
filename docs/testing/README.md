@@ -34,5 +34,16 @@ defense.
 | N5 | User edits own profile | allowed | 1 row changed |
 | N6 | Sign up with a university e-mail | allowed | saved |
 
+## Result on 1 Nov 2026 (live database, after migration 11): 18 of 18 PASS
+
+The 14 actions above pass again, plus four checks for the rules added by migration 11:
+
+| # | Action | Expected | Verdict |
+|---|---|---|---|
+| 7 | Author edits the candidate's note in an application | denied | PASS |
+| 8 | Change the email to a non-university one | denied | PASS |
+| N7 | Change the email to another university one | allowed | PASS |
+| N8 | Team assembled twice notifies each candidate once | allowed (exactly 1 notification) | PASS |
+
 Why 6b/6c use the anonymous role: with *Confirm email* on, Supabase gives an unconfirmed user no
 session, so every request they could send reaches the database exactly like an anonymous one.
