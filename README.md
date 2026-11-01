@@ -51,7 +51,7 @@ The site opens at `http://127.0.0.1:8080`.
 - Add `?desktop` to the address to see the desktop layout on a narrow screen.
 - Add `?heavy` to load the original, unoptimised images (used only to measure the image optimisation).
 
-The app talks to the Supabase project set at the top of `app.js` and `mobile.js` (`SUPABASE_URL`, `SUPABASE_KEY`). The key is the *publishable* key, which is safe in the browser: what each user can read and write is decided by the RLS policies in the database, not by the key.
+The app talks to the Supabase project set at the top of `core.js` (`SUPABASE_URL`, `SUPABASE_KEY`), shared by both pages. The key is the *publishable* key, which is safe in the browser: what each user can read and write is decided by the RLS policies in the database, not by the key.
 
 ## Project structure
 
