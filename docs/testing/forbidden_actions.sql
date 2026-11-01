@@ -19,7 +19,8 @@ returns void language plpgsql as $$
 declare n int; ok boolean; outcome text;
 begin
   begin
-    if p_kind = 'read' then execute p_sql into n; else execute p_sql; get diagnostics n = row_count; end if;
+    -- 'read' and 'once' take the value the query returns; the others count the rows it changed
+    if p_kind in ('read', 'once') then execute p_sql into n; else execute p_sql; get diagnostics n = row_count; end if;
     ok := case when p_kind = 'once' then n = 1 else n > 0 end;
     outcome := case p_kind when 'read' then n || ' rows visible' when 'insert' then 'saved'
                            when 'once' then n || ' notification(s)' else n || ' rows changed' end;
