@@ -53,6 +53,17 @@ The site opens at `http://127.0.0.1:8080`.
 
 The app talks to the Supabase project set at the top of `core.js` (`SUPABASE_URL`, `SUPABASE_KEY`), shared by both pages. The key is the *publishable* key, which is safe in the browser: what each user can read and write is decided by the RLS policies in the database, not by the key.
 
+## Test accounts
+
+The live site is [insarbabyr.github.io/TeamUp_Project](https://insarbabyr.github.io/TeamUp_Project/). Author and candidate are roles, not account types: every account can do both. These two synthetic accounts are set up so each role has something to look at right away.
+
+| Role | E-mail | Password | What it shows |
+|---|---|---|---|
+| Project author | `test.user08@astanait.edu.kz` | `TeamUp-Author-2026` | 3 open projects with 9 applications in every status: move one to *On trial* or *Accepted*, mark a team assembled |
+| Candidate | `test.user36@astanait.edu.kz` | `TeamUp-Candidate-2026` | 3 applications: one under review on *Test project 1* (by the author above), one accepted with the author's Telegram visible |
+
+Sign in with **Sign in**, not Sign up: the addresses are not real mailboxes, so no code can be received for them. Please do not change their passwords or delete them. To try registration itself, use your own `@astanait.edu.kz` address.
+
 ## Project structure
 
 ```
