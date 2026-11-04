@@ -374,8 +374,9 @@ const A={
                 const captchaToken=await capToken(); if(captchaToken===null) return;
                 const r=await sb.auth.signUp({email:e,password:pw,options:{data:{name:n},captchaToken}}); capReset();
                 if(r.error) return toast(/database error|^\s*\{\s*\}\s*$/i.test(r.error.message)||!e.endsWith('@astanait.edu.kz')?'Registration failed. Only @astanait.edu.kz addresses are allowed.':r.error.message);
-                // an address that is already registered and confirmed gets no error and no e-mail, only a user without identities
-                if(r.data.user&&Array.isArray(r.data.user.identities)&&r.data.user.identities.length===0){
+                // an address that is already registered and confirmed gets no error and no e-mail, only a user without
+                // identities (an empty list, or no list at all in newer Supabase versions); a new account always has one
+                if(r.data.user&&!(r.data.user.identities||[]).length){
                     A.setAuth({m:'login',note:'This email is already registered. Sign in with your password, or use "Forgot password?".'});
                     $('#authPassword').focus();
                     return toast('This email is already registered. Sign in instead.');
