@@ -276,7 +276,7 @@ const A={
         show('#authTabs', !isRec);
         show('#regFields', isReg);
         show('#privHint', isReg);
-        show('#authHint', isRec);
+        show('#authHint', isRec || !!d.note);
         show('#codeFields', m === 'reset' || m === 'confirm');
         show('#pwFields', m !== 'forgot' && m !== 'confirm');
         show('#pw2Fields', m === 'reset');
@@ -286,7 +286,7 @@ const A={
         $('#tabLogin').classList.toggle('active', !isReg);
         $('#tabRegister').classList.toggle('active', isReg);
         $('#authModalTitle').textContent = {register:'Sign up', forgot:'Reset password', reset:'Set a new password', confirm:'Confirm your email'}[m] || 'Sign in';
-        $('#authHint').textContent = m === 'forgot' ? 'Enter your university email. We will send you a code to reset your password.'
+        $('#authHint').textContent = d.note ? d.note : m === 'forgot' ? 'Enter your university email. We will send you a code to reset your password.'
             : m === 'confirm' ? 'We sent a code to your university email. Enter it to finish. It can take a few minutes, check the Junk folder too.'
             : 'If this email is registered, we sent a code to it. It can take a few minutes, check the Junk folder too.';
         $('#authPwLbl').textContent = m === 'reset' ? 'New password' : 'Password';
@@ -374,6 +374,12 @@ const A={
                 const captchaToken=await capToken(); if(captchaToken===null) return;
                 const r=await sb.auth.signUp({email:e,password:pw,options:{data:{name:n},captchaToken}}); capReset();
                 if(r.error) return toast(/database error|^\s*\{\s*\}\s*$/i.test(r.error.message)||!e.endsWith('@astanait.edu.kz')?'Registration failed. Only @astanait.edu.kz addresses are allowed.':r.error.message);
+                // an address that is already registered and confirmed gets no error and no e-mail, only a user without identities
+                if(r.data.user&&Array.isArray(r.data.user.identities)&&r.data.user.identities.length===0){
+                    A.setAuth({m:'login',note:'This email is already registered. Sign in with your password, or use "Forgot password?".'});
+                    $('#authPassword').focus();
+                    return toast('This email is already registered. Sign in instead.');
+                }
                 if(!r.data.session) return A.setAuth({m:'confirm'});
                 await bootUser(r.data.user);
             } else {
