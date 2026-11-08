@@ -122,7 +122,7 @@ V.detail=()=>{
 <div class="col"><div class="lbl">Skill</div><div class="row">${p.req.concat(p.opt).map(s=>chip(s,R.skill===s,`data-a="rs" data-s="${s}"`)).join('')}</div></div>
 <div class="col"><div class="lbl">Your level</div><div class="row">${LV.map((l,i)=>chip(l,R.level===i,`data-a="rl" data-i="${i}"`)).join('')}</div></div>
 <div class="col"><label class="lbl" for="rl">Link to your work</label><input id="rl" class="fld" data-k="R.link" maxlength="300" placeholder="GitHub, Figma, Kaggle, coursework" value="${esc(R.link)}"><span class="mut">With a link, the skill gets a “Link provided” mark.</span></div>
-<div class="col"><label class="lbl" for="rd">What exactly did you do</label><textarea id="rd" class="fld" data-k="R.did" maxlength="500" placeholder="One or two lines">${esc(R.did)}</textarea><span class="mut">Atleast 5 symbols</span></div>
+<div class="col"><label class="lbl" for="rd">What exactly did you do</label><textarea id="rd" class="fld" data-k="R.did" maxlength="500" placeholder="One or two lines">${esc(R.did)}</textarea><span class="mut">At least 5 characters</span></div>
 <div class="col"><div class="lbl">When can you start</div><div class="row">${AV.map(w=>chip(w,R.when===w,`data-a="rw" data-w="${w}"`)).join('')}</div></div>
 <div class="col"><label class="lbl" for="rt">Telegram</label><input id="rt" class="fld" data-k="R.tg" maxlength="33" placeholder="@username" value="${esc(R.tg)}"><span class="mut">Your Telegram username, starting with @. The author sees it only after accepting you.</span></div>
 <button class="btn" data-a="send">Apply</button></div>`;
