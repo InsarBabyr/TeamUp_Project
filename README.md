@@ -15,9 +15,10 @@ An author posts a project with the skills it needs. Other students apply from th
 - **Fits you.** Skills from your profile are marked on every project, cards say how many of the required skills you have, and Find shows the best match first (or the newest, if you switch).
 - **Applications.** Apply with a skill, your level, a link to your work and a short note. Withdraw an application while it is under review or on trial.
 - **Trials.** Authors move candidates through *Under review → On trial → Accepted / Rejected* and can set a trial task with a deadline.
+- **Verified Telegram.** A Telegram handle cannot be typed in: students connect it with Telegram Login, and the database checks Telegram's signature before saving it, so nobody can enter a made-up or someone else's handle. **Change** connects it again (a new username, or another Telegram account), **Disconnect** removes it. A connected Telegram is required to apply. Handles saved before this check show as *not verified* until their owner presses **Verify**.
 - **Private contacts.** A Telegram handle is visible only between an author and a candidate they accepted, enforced by the database.
 - **Live notifications.** Authors see new applications and candidates see status changes without reloading, with an optional sound (switched on or off in the notifications panel).
-- **Profile.** Name, programme and group, Telegram, availability and skills with levels and links. **Delete my account** removes the account and everything linked to it.
+- **Profile.** Name, programme and group, verified Telegram, availability and skills with levels and links. **Delete my account** removes the account and everything linked to it.
 - **Password reset** with a code sent by email.
 - **How-to guide on the home page.** An animated walkthrough with four tabs (create a project, fill in your profile, apply, pick your team): a mock screen shows each step while the explanation is highlighted next to it. Built in HTML/CSS, so it is sharp on any screen, follows the dark theme and weighs a few KB. It plays only while on screen, pauses on hover or focus, steps can be clicked, and with *reduce motion* it does not play by itself.
 - **Privacy notice** (`privacy.html`): what the site stores, who can see it, which services process it and how to delete an account. Linked from the footer and the sign-up form.
@@ -33,6 +34,7 @@ An author posts a project with the skills it needs. Other students apply from th
 | Email | Supabase Auth over [Resend](https://resend.com) SMTP, sent from `no-reply@teamupaitu.com` |
 | Files | Supabase Storage (private bucket `project-files`) |
 | Bot protection | Cloudflare Turnstile (CAPTCHA) on sign-in, sign-up and emailed codes |
+| Telegram | Telegram Login (a bot made with @BotFather); the signature is checked in the database with pgcrypto, the bot token is kept in Supabase Vault |
 | Dev server | [live-server](https://www.npmjs.com/package/live-server) |
 
 ## Getting started
@@ -60,7 +62,7 @@ The live site is [insarbabyr.github.io/TeamUp_Project](https://insarbabyr.github
 | Role | E-mail | Password | What it shows |
 |---|---|---|---|
 | Project author | `test.user08@astanait.edu.kz` | `TeamUp-Author-2026` | 3 open projects with 9 applications in every status: move one to *On trial* or *Accepted*, mark a team assembled |
-| Candidate | `test.user36@astanait.edu.kz` | `TeamUp-Candidate-2026` | 3 applications: one under review on *Test project 1* (by the author above), one accepted with the author's Telegram visible |
+| Candidate | `test.user36@astanait.edu.kz` | `TeamUp-Candidate-2026` | 3 applications: one under review on *Test project 1* (by the author above), one accepted with the author's Telegram visible (a test handle, shown as *not verified*) |
 
 Sign in with **Sign in**, not Sign up: the addresses are not real mailboxes, so no code can be received for them. Please do not change their passwords or delete them. To try registration itself, use your own `@astanait.edu.kz` address.
 
@@ -89,7 +91,7 @@ Both pages load `core.js` first and then their own file. Logic and data changes 
 | Table | What it holds |
 |---|---|
 | `profiles` | Name, last name, programme and group, availability (one row per user) |
-| `contacts` | Telegram handle, readable only by the owner and by the other side of an accepted application |
+| `contacts` | Telegram handle with its Telegram id and when Telegram confirmed it; readable only by the owner and by the other side of an accepted application |
 | `skills`, `skill_categories` | The skill catalogue |
 | `programs` | AITU study programmes for the group field |
 | `user_skills` | A user's skills with level, link to work and a note |
@@ -106,7 +108,8 @@ Rules enforced by the database, not only by the page:
 - "Team assembled" notifies each candidate once per project, even if the project is reopened and assembled again.
 - At most 10 new projects and 20 applications per user per day (triggers `limit_projects_per_day`, `limit_applications_per_day`).
 - A user can delete only their own account (function `delete_my_account`, migration 10); everything linked to it goes with it through `on delete cascade`. Project files are removed first through the Storage API, and the function refuses while any are left.
-- Applying is one transaction (function `apply_to_project`): the skill, contact, availability and application are saved together or not at all.
+- Applying is one transaction (function `apply_to_project`): the skill, availability and application are saved together or not at all, and only with a connected Telegram.
+- A Telegram handle is written only by `connect_telegram` after it checks the data signed by Telegram Login (migration 12); students cannot write the `contacts` table directly, only delete their own row. One Telegram account can be connected to one TeamUp account.
 
 ### Schema and migrations
 
@@ -126,4 +129,5 @@ These live in the Supabase dashboard, not in the code:
 - **Authentication → Emails → Templates:** *Confirm signup* and *Reset Password* contain `{{ .Token }}` (a code, not a link). University mail runs on Microsoft 365, whose Safe Links opens links in emails first and can use up a one-time link before the student clicks it.
 - **Realtime:** the `notifications` table is in the `supabase_realtime` publication (migration 5).
 - **Storage:** the `project-files` bucket (3 MB per file, documents and images only) and its policies are created by migration 8; the free plan has 1 GB. Usage: **Storage → Usage**.
+- **Telegram Login:** a bot created with @BotFather, whose domain is set with `/setdomain` to the site's domain (`insarbabyr.github.io`; Telegram Login does not work on `localhost`). Its token is stored in Vault under the name `telegram_bot_token`, by running `select vault.create_secret('<bot token>', 'telegram_bot_token');` in the SQL Editor. The token never goes into the code; the page reads only the bot's public id through `telegram_bot_id()`.
 - **Authentication → Attack Protection → CAPTCHA:** Cloudflare Turnstile with its secret key. The matching public site key is `TURNSTILE_SITEKEY` at the top of `core.js`; both must be set together, or every sign-in fails. The Turnstile widget's hostnames must include every address the site is opened from (for example `localhost`).

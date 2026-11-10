@@ -2,9 +2,10 @@
 -- into a new, empty Supabase project. It already includes everything in migrations/, so run
 -- this file on its own (SQL Editor → New query → Run), not together with the migrations.
 --
--- Not in this file (they live in the dashboard): Auth settings, SMTP and email templates.
+-- Not in this file (they live in the dashboard): Auth settings, SMTP and email templates, and the
+-- Telegram bot token in Vault (see migration 12).
 -- See "Supabase settings the app relies on" in README.md.
--- Exported 2026-10-28, updated with migrations 6 to 11.
+-- Exported 2026-10-28, updated with migrations 6 to 12.
 
 begin;
 
@@ -64,9 +65,14 @@ create table public.profiles (
   constraint profiles_group_complete check ((program_code is null) = (group_number is null))
 );
 
+-- Telegram handle. Written only by connect_telegram() after Telegram Login confirms it
+-- (migration 12); rows without telegram_id were typed in before that and are not verified.
 create table public.contacts (
-  user_id  uuid primary key references public.profiles(id) on delete cascade,
-  telegram text not null check (telegram ~ '^@[A-Za-z0-9_]{5,32}$')
+  user_id     uuid primary key references public.profiles(id) on delete cascade,
+  telegram    text not null check (telegram ~ '^@[A-Za-z0-9_]{5,32}$'),
+  telegram_id bigint unique,
+  verified_at timestamptz,
+  constraint contacts_verified_complete check ((telegram_id is null) = (verified_at is null))
 );
 
 create table public.user_skills (
@@ -186,15 +192,15 @@ begin
   return new;
 end $$;
 
--- Apply to a project in one transaction: skill, contact, availability and the application
--- are saved together or not at all. SECURITY INVOKER keeps every RLS policy in force.
+-- Apply to a project in one transaction: skill, availability and the application are saved
+-- together or not at all; a connected Telegram is required. SECURITY INVOKER keeps every RLS
+-- policy in force.
 create or replace function public.apply_to_project(
   p_project_id   uuid,
   p_skill_id     int,
   p_level        text,
   p_link         text,
   p_note         text,
-  p_telegram     text,
   p_availability text
 )
 returns uuid
@@ -209,6 +215,9 @@ begin
   if uid is null then
     raise exception 'Not signed in' using errcode = '42501';
   end if;
+  if not exists (select 1 from contacts where user_id = uid) then
+    raise exception 'Connect your Telegram first, so the author can reach you after accepting.';
+  end if;
   if not exists (select 1 from project_skills where project_id = p_project_id and skill_id = p_skill_id) then
     raise exception 'This skill is not listed in the project' using errcode = '23514';
   end if;
@@ -218,10 +227,6 @@ begin
   on conflict (user_id, skill_id) do update
     set level = excluded.level, link_url = excluded.link_url, evidence_note = excluded.evidence_note;
 
-  insert into contacts (user_id, telegram)
-  values (uid, p_telegram)
-  on conflict (user_id) do update set telegram = excluded.telegram;
-
   update profiles set availability = p_availability where id = uid;
 
   insert into applications (project_id, candidate_id, note)
@@ -229,6 +234,84 @@ begin
   returning id into app_id;
 
   return app_id;
+end;
+$$;
+
+
+-- Telegram Login (migration 12). The bot token is kept in Vault as 'telegram_bot_token'.
+-- The bot id is the public part of the token (before the colon); the login window needs it
+create or replace function public.telegram_bot_id()
+returns bigint
+language sql
+stable
+security definer
+set search_path = ''
+as $$
+  select nullif(split_part(s.decrypted_secret, ':', 1), '')::bigint
+  from vault.decrypted_secrets s
+  where s.name = 'telegram_bot_token'
+  limit 1
+$$;
+
+-- Check the data Telegram signed and save the handle.
+-- Telegram's rule (core.telegram.org/widgets/login#checking-authorization):
+-- every field except "hash", as key=value, sorted by key, joined with newlines, signed with
+-- HMAC-SHA256 whose key is SHA-256 of the bot token; the result must equal "hash".
+create or replace function public.connect_telegram(p_auth jsonb)
+returns text
+language plpgsql
+security definer
+set search_path = ''
+as $$
+declare
+  uid      uuid := auth.uid();
+  token    text;
+  payload  text;
+  expected text;
+  tg_id    bigint;
+  uname    text;
+begin
+  if uid is null then
+    raise exception 'Not signed in' using errcode = '42501';
+  end if;
+
+  select s.decrypted_secret into token
+  from vault.decrypted_secrets s where s.name = 'telegram_bot_token' limit 1;
+  if token is null then
+    raise exception 'Telegram sign-in is not set up yet';
+  end if;
+
+  select string_agg(e.key || '=' || e.value, E'\n' order by e.key collate "C")
+  into payload
+  from jsonb_each_text(p_auth) e
+  where e.key <> 'hash';
+
+  expected := encode(extensions.hmac(convert_to(coalesce(payload, ''), 'UTF8'),
+                                     extensions.digest(token, 'sha256'), 'sha256'), 'hex');
+  if p_auth ->> 'hash' is null or lower(p_auth ->> 'hash') <> expected then
+    raise exception 'Telegram could not confirm this account. Try again.';
+  end if;
+
+  if (p_auth ->> 'auth_date')::bigint < extract(epoch from now()) - 86400 then
+    raise exception 'The Telegram sign-in has expired. Try again.';
+  end if;
+
+  uname := p_auth ->> 'username';
+  if uname is null or uname !~ '^[A-Za-z][A-Za-z0-9_]{4,31}$' then
+    raise exception 'Set a username in Telegram first (Settings, then Username), then connect again.';
+  end if;
+
+  tg_id := (p_auth ->> 'id')::bigint;
+  if exists (select 1 from public.contacts c where c.telegram_id = tg_id and c.user_id <> uid) then
+    raise exception 'This Telegram account is already connected to another TeamUp account.';
+  end if;
+
+  insert into public.contacts (user_id, telegram, telegram_id, verified_at)
+  values (uid, '@' || uname, tg_id, now())
+  on conflict (user_id) do update
+    set telegram = excluded.telegram, telegram_id = excluded.telegram_id, verified_at = excluded.verified_at;
+
+  return '@' || uname;
 end;
 $$;
 
@@ -382,8 +465,12 @@ revoke execute on function public.limit_projects_per_day()   from public, anon, 
 revoke execute on function public.limit_applications_per_day() from public, anon, authenticated;
 revoke execute on function private.notify_application()      from public, anon, authenticated;
 revoke execute on function private.notify_assembled()        from public, anon, authenticated;
-revoke execute on function public.apply_to_project(uuid, int, text, text, text, text, text) from public, anon;
-grant  execute on function public.apply_to_project(uuid, int, text, text, text, text, text) to authenticated;
+revoke execute on function public.apply_to_project(uuid, int, text, text, text, text) from public, anon;
+grant  execute on function public.apply_to_project(uuid, int, text, text, text, text) to authenticated;
+revoke execute on function public.telegram_bot_id()       from public, anon;
+grant  execute on function public.telegram_bot_id()       to authenticated;
+revoke execute on function public.connect_telegram(jsonb) from public, anon;
+grant  execute on function public.connect_telegram(jsonb) to authenticated;
 revoke execute on function private.has_applied(uuid) from public, anon;
 grant  execute on function private.has_applied(uuid) to authenticated;
 
@@ -452,9 +539,10 @@ create policy "profiles read"   on public.profiles for select to authenticated u
 create policy "profiles insert" on public.profiles for insert to authenticated with check (id = auth.uid());
 create policy "profiles update" on public.profiles for update to authenticated using (id = auth.uid()) with check (id = auth.uid());
 
--- Contacts: your own, plus the other side of an accepted application
-create policy "contacts own" on public.contacts for all to authenticated
-  using (user_id = auth.uid()) with check (user_id = auth.uid());
+-- Contacts: your own (read, and delete to disconnect), plus the other side of an accepted
+-- application. Nobody writes them directly: only connect_telegram() does (migration 12).
+create policy "contacts own read"   on public.contacts for select to authenticated using (user_id = auth.uid());
+create policy "contacts own delete" on public.contacts for delete to authenticated using (user_id = auth.uid());
 create policy "contacts after acceptance" on public.contacts for select to authenticated using (
   exists (
     select 1 from applications a join projects p on p.id = a.project_id
@@ -506,6 +594,7 @@ create policy "notifications read own" on public.notifications for select to aut
 create policy "notifications mark read" on public.notifications for update to authenticated
   using (user_id = auth.uid()) with check (user_id = auth.uid());
 revoke insert, update, delete on public.notifications from anon, authenticated;
+revoke insert, update on public.contacts from anon, authenticated;
 grant update (read_at) on public.notifications to authenticated;
 
 -- ============================================================

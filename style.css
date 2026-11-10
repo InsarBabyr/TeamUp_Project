@@ -342,6 +342,8 @@ img{max-width:100%;height:auto}
 .dem-b i { display: block; height: 100%; border-radius: 0 4px 4px 0; background: #2563EB; }
 .demr b { text-align: right; font-variant-numeric: tabular-nums; }
 .ft a { color: inherit; text-decoration: underline; }
+/* Telegram field: handle, status and Connect / Change / Disconnect (migration 12) */
+.tgrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; min-height: 36px; }
 .dz { margin-top: 32px; padding-top: 20px; border-top: 1px solid var(--ln); }
 .dzb { align-self: flex-start; border-color: #FCA5A5; color: #B91C1C; }
 .dza { justify-content: flex-end; }
