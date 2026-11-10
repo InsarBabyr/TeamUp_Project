@@ -1,7 +1,7 @@
 -- Success criterion 3 (Stage 1): "Data protection: the rules block actions that are not allowed".
 -- Run the whole file in Supabase -> SQL Editor. It acts as real users picked from the database,
--- tries the 6 forbidden actions from Stage 1, the checks added by migration 11 and the normal
--- actions, and shows PASS / FAIL for each.
+-- tries the 6 forbidden actions from Stage 1, the checks added by migrations 11 and 12 and the
+-- normal actions, and shows PASS / FAIL for each.
 -- Nothing is saved: every attempt is undone right after it runs; only its outcome is kept in a
 -- temporary table, shown at the end.
 
@@ -128,6 +128,17 @@ begin
 end $$;
 select pg_temp.attempt('N8', 'Team assembled twice notifies each candidate once', 'allowed', 'once',
   $q$select pg_temp.assemble_twice(current_setting('t.p')::uuid, current_setting('t.b')::uuid)$q$);
+
+-- ===== added by migration 12 =====
+
+-- as A: a Telegram handle comes only from Telegram Login (connect_telegram), never typed in
+select set_config('request.jwt.claims', json_build_object('sub', current_setting('t.a'), 'role', 'authenticated')::text, false);
+set role authenticated;
+select pg_temp.attempt('9', 'Type a Telegram handle without Telegram Login', 'denied', 'rows',
+  $q$update contacts set telegram = '@typed_handle' where user_id = auth.uid()$q$);
+select pg_temp.attempt('N9', 'Disconnect own Telegram', 'allowed', 'rows',
+  $q$delete from contacts where user_id = auth.uid()$q$);
+reset role;
 
 -- ===== the normal actions still work =====
 

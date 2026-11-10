@@ -80,7 +80,7 @@ document.body.insertAdjacentHTML('beforeend', `
 
 let S={projects:[],me:null,view:'landing',pid:null,op:null,tab:'new',ready:false};
 const F={skills:[],type:'All',novice:false,urgent:false,fit:false,hide:false,q:'',sort:'match'};
-const nR=()=>({skill:'',level:1,link:'',did:'',when:'Today',tg:''});
+const nR=()=>({skill:'',level:1,link:'',did:'',when:'Today'});
 const nC=()=>({title:'',type:'Hackathon',desc:'',sk:{},urgent:false,trial:'Quick chat',trialTask:'',trialDue:'',novice:true,n:1,links:[],files:[],old:[],del:[]});
 
 let R=nR(), C=nC(), G={name:'',email:'',pw:''}, RCV=false, tm, lastT=0;
@@ -107,7 +107,25 @@ const skl=p=>{
 const todayStr=()=>new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,10);
 const realDate=s=>{ if(!/^\d{4}-\d{2}-\d{2}$/.test(s)) return false; const[y,m,d]=s.split('-').map(Number), x=new Date(y,m-1,d); return x.getFullYear()===y&&x.getMonth()===m-1&&x.getDate()===d; };
 const okDate=s=>realDate(s)&&s>=todayStr();   // a real calendar date, today or later
-const TGRE=/^@[A-Za-z][A-Za-z0-9_]{4,31}$/;   // Telegram: 5-32 characters, starts with a letter
+// Telegram comes only from Telegram Login (migration 12): the login window returns data signed
+// with the bot token, and the database function connect_telegram() checks the signature.
+// TGBOT is the bot's public id, read from the database; null until the bot is set up.
+let TGBOT=null;
+const TGJS='https://telegram.org/js/telegram-widget.js?22';
+function loadTgWidget(){
+    if(window.Telegram&&window.Telegram.Login||document.getElementById('tgjs')) return;
+    const x=document.createElement('script'); x.id='tgjs'; x.src=TGJS; x.async=true; document.head.appendChild(x);
+}
+// a handle with its status: confirmed by Telegram, or typed in before verification existed
+const tgShow=(h,v)=>h?`<b>${esc(h)}</b> ${v?'<span class="ok">Verified</span>':'<span class="mut">(not verified)</span>'}`:'<b>not provided</b>';
+// the Telegram field in Profile and in the apply form, the same on both pages
+const tgBox=w=>{
+    const m=S.me||{}, apply=w==='apply';
+    const hint=apply?'The author sees it only after accepting you.':'Shown to an author or candidate only after acceptance.'+(m.tgv?' To connect another Telegram account, log out in the Telegram window first.':'');
+    return `<div class="col"><span class="lbl">Telegram</span>${m.tg
+        ?`<div class="tgrow"><span>${tgShow(m.tg,m.tgv)}</span><button class="ghost" data-a="tgc">${m.tgv?'Change':'Verify'}</button>${apply?'':'<button class="ghost" data-a="tgd">Disconnect</button>'}</div>`
+        :`<div class="tgrow"><button class="ghost" data-a="tgc">Connect Telegram</button></div>`}<span class="mut">${hint}</span></div>`;
+};
 const HEAVY=/[?&]heavy\b/.test(location.search);   // ?heavy = unoptimised originals, used only for the before/after measurement
 const ic=n=>`<svg class="ic" aria-hidden="true" focusable="false"><use href="assets/icons.svg#i-${n}"></use></svg>`;
 const pic=(n,alt,w,h,s1,s2,sizes,cls='')=>HEAVY
@@ -191,13 +209,13 @@ const oc=(o,p)=>`<div class="card"><div class="top"><div><b>${esc(o.name)}</b>${
 <div class="row"><span class="chip req">Applied for: ${esc(o.skill)} · ${LV[o.level]}</span><span class="chip">${esc(o.when)}</span></div>
 ${(o.skills||[]).length?`<div class="row">${o.skills.map(x=>`<span class="chip">${esc(x.s)} · ${LV[x.level]||''}${x.link?' ✓':''}</span>`).join('')}</div>`:''}
 <div class="mut">${o.link?`<a href="${esc(o.link)}" target="_blank" rel="noopener">Work</a> · `:''}“${esc(o.did)}”</div>
-${o.st==='team'?`<div class="mut">Telegram: <b>${esc(o.tg)}</b></div>`:'<div class="mut">Contact opens after acceptance</div>'}
+${o.st==='team'?`<div class="mut">Telegram: ${tgShow(o.tg,o.tgv)}</div>`:'<div class="mut">Contact opens after acceptance</div>'}
 ${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}
 <div class="row">${btns(o)}</div></div>`;
 V.apps=()=>{
     const L=[];
     S.projects.forEach(p=>p.offers.filter(o=>o.cid==='me').forEach(o=>L.push([p,o])));
-    return `<div class="wrap"><div class="main col" style="gap:16px"><h1>My applications</h1>${L.length?L.map(([p,o])=>`<div class="card"><div class="top"><h3>${esc(p.title)}</h3><span class="chip st st-${o.st}">${STT[o.st]}</span></div><div class="mut">${tpl(p.type)} · ${esc(p.author)}${p.status==='open'?'':' · '+pst(p.status)}</div><div class="row"><span class="chip req">${esc(o.skill)} · ${LV[o.level]}</span></div>${o.st==='team'?`<div class="mut">Author's Telegram: <b>${esc(p.tg||'not provided')}</b></div>`:'<div class="mut">The author\'s contact opens once you are accepted.</div>'}${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}<div class="row"><button class="ghost" data-a="open" data-id="${p.id}">View project</button>${o.st==='new'||o.st==='trial'?`<button class="ghost" data-a="wd" data-o="${o.id}">Withdraw</button>`:''}</div></div>`).join(''):'<div class="card">You have not applied yet.<button class="btn" data-a="go" data-v="find">Find projects</button></div>'}</div></div>`;
+    return `<div class="wrap"><div class="main col" style="gap:16px"><h1>My applications</h1>${L.length?L.map(([p,o])=>`<div class="card"><div class="top"><h3>${esc(p.title)}</h3><span class="chip st st-${o.st}">${STT[o.st]}</span></div><div class="mut">${tpl(p.type)} · ${esc(p.author)}${p.status==='open'?'':' · '+pst(p.status)}</div><div class="row"><span class="chip req">${esc(o.skill)} · ${LV[o.level]}</span></div>${o.st==='team'?`<div class="mut">Author's Telegram: ${tgShow(p.tg,p.tgv)}</div>`:'<div class="mut">The author\'s contact opens once you are accepted.</div>'}${o.st==='trial'&&p.trialTask?`<div class="mut">Trial task: ${esc(p.trialTask)}${p.trialDue?' · deadline '+esc(p.trialDue):''}</div>`:''}<div class="row"><button class="ghost" data-a="open" data-id="${p.id}">View project</button>${o.st==='new'||o.st==='trial'?`<button class="ghost" data-a="wd" data-o="${o.id}">Withdraw</button>`:''}</div></div>`).join(''):'<div class="card">You have not applied yet.<button class="btn" data-a="go" data-v="find">Find projects</button></div>'}</div></div>`;
 };
 
 const gated=['find','detail','mine','manage','apps','profile','create'];
@@ -428,7 +446,7 @@ const A={
         const p=P(), m=S.me, x=m&&m.skills.find(k=>p.req.concat(p.opt).includes(k.s));
         R=nR(); R.skill=x?x.s:p.req[0]||'';
         if(x){R.level=x.level; R.link=x.link||''}
-        if(m){R.when=m.avail; R.tg=m.tg}
+        if(m) R.when=m.avail;
         go('detail');
     },
     fsel:(d,v)=>{if(v&&!F.skills.includes(v)) F.skills.push(v); render(false)},
@@ -454,14 +472,34 @@ const A={
     },
     rl:d=>{R.level=+d.i; render(false)},
     rw:d=>{R.when=d.w; render(false)},
+    // connect, change or verify: Telegram's own window; its signed answer is checked by the database
+    tgc:()=>{
+        if(need()) return;
+        if(!TGBOT) return toast('Telegram sign-in is not set up yet');
+        if(!(window.Telegram&&window.Telegram.Login)){ loadTgWidget(); return toast('Telegram is loading, try again in a second'); }
+        window.Telegram.Login.auth({bot_id:TGBOT},async u=>{
+            if(!u) return toast('Telegram sign-in was cancelled');
+            const r=await sb.rpc('connect_telegram',{p_auth:u});
+            if(r.error) return dberr(r.error);
+            S.me.tg=r.data; S.me.tgv=true; await load(); toast('Telegram connected: '+r.data); render(false);
+        });
+    },
+    tgd:async()=>{
+        if(need()||!S.me.tg) return;
+        if(!confirm('Disconnect your Telegram? Accepted teammates will no longer see it, and you will need to connect it again to apply.')) return;
+        const r=await sb.from('contacts').delete().eq('user_id',S.me.uid);
+        if(r.error) return dberr(r.error);
+        S.me.tg=''; S.me.tgv=false; toast('Telegram disconnected'); render(false);
+    },
     send:async()=>{
         if(need()) return;
-        const p=P(), d=cl(R.did,500), tg=cl(R.tg,33).replace(/^@?/,'@');
+        const p=P(), d=cl(R.did,500);
         let l=cl(R.link,300);
         if(p.authorId==='me') return toast('You cannot apply to your own project');
         if(applied(p)) return toast('You have already applied');
         if(!R.skill) return toast('Choose the skill you are applying with');
-        if(!p.req.concat(p.opt).includes(R.skill)||d.length<5||!TGRE.test(tg)) return toast('Check the fields: describe what you did (5+ characters), Telegram like @username');
+        if(!p.req.concat(p.opt).includes(R.skill)||d.length<5) return toast('Check the fields: describe what you did (5+ characters)');
+        if(!S.me.tg) return toast('Connect your Telegram first, so the author can reach you after accepting');
         if(l){
             if(!/^https?:\/\//i.test(l)) l='https://'+l;
             try{if(!/^https?:$/.test(new URL(l).protocol)) throw 0}catch(e){return toast('That link looks invalid')}
@@ -469,10 +507,10 @@ const A={
         if(!tok('send')) return;
         const sid=SKID[R.skill];
         if(!sid) return toast('Unknown skill');
-        // one transaction: skill, contact, availability and the application are saved together or not at all
-        const r=await sb.rpc('apply_to_project',{p_project_id:p.id,p_skill_id:sid,p_level:LVDB[R.level],p_link:l||null,p_note:d,p_telegram:tg,p_availability:AVDB[R.when]});
+        // one transaction: skill, availability and the application are saved together or not at all
+        const r=await sb.rpc('apply_to_project',{p_project_id:p.id,p_skill_id:sid,p_level:LVDB[R.level],p_link:l||null,p_note:d,p_availability:AVDB[R.when]});
         if(r.error) return dberr(r.error);
-        S.me.tg=tg; S.me.avail=R.when;
+        S.me.avail=R.when;
         const k=S.me.skills.find(x=>x.s===R.skill);
         if(k){k.level=R.level; k.link=l} else S.me.skills.push({s:R.skill,level:R.level,link:l});
         await load(); toast('Application sent'); render(false);
@@ -734,7 +772,7 @@ async function load(){
         sb.from('projects').select(PF).eq('status','open').neq('author_id',uid).order('created_at',{ascending:false}).limit(PLIM),
         sb.from('projects').select(PF).eq('author_id',uid),
         sb.from('applications').select('id,project_id,candidate_id,note,status,created_at,cand:profiles!applications_candidate_id_fkey(display_name,last_name,program_code,group_number,availability,user_skills(level,link_url,skills(name)))').order('created_at',{ascending:false}),
-        sb.from('contacts').select('user_id,telegram')
+        sb.from('contacts').select('user_id,telegram,verified_at')
     ]);
     const er=pr.error||mn.error||ap.error||ct.error;
     if(er) return dberr(er);
@@ -750,7 +788,7 @@ async function load(){
     const dm=await sb.from('skill_demand').select('skill,projects,required').order('projects',{ascending:false}).order('skill').limit(5);
     DEM=dm.error?[]:dm.data;
     
-    const tg={}; ct.data.forEach(c=>tg[c.user_id]=c.telegram);
+    const tg={}, tgv={}; ct.data.forEach(c=>{tg[c.user_id]=c.telegram; tgv[c.user_id]=!!c.verified_at;});
     
     S.projects=rows.map(p=>{
         const req=[], opt=[];
@@ -758,9 +796,9 @@ async function load(){
         const all=req.concat(opt);
         const offers=ap.data.filter(a=>a.project_id===p.id).map(a=>{
             const c=a.cand||{}, sk=(c.user_skills||[]).map(x=>({s:x.skills.name,level:Math.max(0,LVDB.indexOf(x.level)),link:x.link_url||''})), mk=sk.find(x=>all.includes(x.s))||sk[0]||{s:'',level:0,link:''};
-            return{id:a.id,cid:a.candidate_id===uid?'me':a.candidate_id,name:((c.display_name||'')+' '+(c.last_name||'')).trim(),group:grp(c.program_code,c.group_number),skills:sk,skill:mk.s,level:mk.level,link:mk.link,did:a.note||'',when:AVR[c.availability]||'',tg:tg[a.candidate_id]||'',st:STR[a.status]||'new'};
+            return{id:a.id,cid:a.candidate_id===uid?'me':a.candidate_id,name:((c.display_name||'')+' '+(c.last_name||'')).trim(),group:grp(c.program_code,c.group_number),skills:sk,skill:mk.s,level:mk.level,link:mk.link,did:a.note||'',when:AVR[c.availability]||'',tg:tg[a.candidate_id]||'',tgv:!!tgv[a.candidate_id],st:STR[a.status]||'new'};
         });
-        return{id:p.id,title:p.title,type:TYR[p.project_type],authorId:p.author_id===uid?'me':p.author_id,author:p.author?who(p.author.display_name,p.author.program_code,p.author.group_number):'',tg:tg[p.author_id]||'',desc:p.description||'',req,opt,urgent:p.urgent,novice:p.beginner_friendly,trial:p.trial_format||'Quick chat',n:p.spots_needed,status:p.status,trialTask:p.trial_task||'',trialDue:p.trial_due||'',links:p.links||[],offers};
+        return{id:p.id,title:p.title,type:TYR[p.project_type],authorId:p.author_id===uid?'me':p.author_id,author:p.author?who(p.author.display_name,p.author.program_code,p.author.group_number):'',tg:tg[p.author_id]||'',tgv:!!tgv[p.author_id],desc:p.description||'',req,opt,urgent:p.urgent,novice:p.beginner_friendly,trial:p.trial_format||'Quick chat',n:p.spots_needed,status:p.status,trialTask:p.trial_task||'',trialDue:p.trial_due||'',links:p.links||[],offers};
     });
 }
 
@@ -806,9 +844,13 @@ async function bootUser(u){
         if(w.error) return dberr(w.error);
         pr={display_name:nm,last_name:null,program_code:null,group_number:null,availability:'this_week'};
     }
-    const[c,us]=await Promise.all([sb.from('contacts').select('telegram').eq('user_id',u.id).maybeSingle(),sb.from('user_skills').select('level,link_url,skills(name)').eq('user_id',u.id)]);
-    S.me={id:'me',uid:u.id,name:pr.display_name,email:u.email,uni:u.email.split('@')[1],tg:c.data?c.data.telegram:'',last:pr.last_name||'',prog:pr.program_code||'',num:pr.group_number||'',avail:AVR[pr.availability]||'This week',skills:(us.data||[]).map(x=>({s:x.skills.name,level:Math.max(0,LVDB.indexOf(x.level)),link:x.link_url||''}))};
+    const[c,us]=await Promise.all([sb.from('contacts').select('telegram,verified_at').eq('user_id',u.id).maybeSingle(),sb.from('user_skills').select('level,link_url,skills(name)').eq('user_id',u.id)]);
+    S.me={id:'me',uid:u.id,name:pr.display_name,email:u.email,uni:u.email.split('@')[1],tg:c.data?c.data.telegram:'',tgv:!!(c.data&&c.data.verified_at),last:pr.last_name||'',prog:pr.program_code||'',num:pr.group_number||'',avail:AVR[pr.availability]||'This week',skills:(us.data||[]).map(x=>({s:x.skills.name,level:Math.max(0,LVDB.indexOf(x.level)),link:x.link_url||''}))};
     await loadSkills(); await load();
+    // Telegram Login: the bot id comes from the database (null until the bot token is in Vault)
+    const tb=await sb.rpc('telegram_bot_id');
+    TGBOT=tb.error?null:tb.data;
+    if(TGBOT) loadTgWidget();
     listen();
 }
 
@@ -822,11 +864,6 @@ async function syncProfile(){
     if(n.length>=2) up.display_name=n;
     let r=await sb.from('profiles').update(up).eq('id',m.uid);
     if(r.error) return dberr(r.error);
-    const t=cl(m.tg,33);
-    if(TGRE.test(t)){
-        r=await sb.from('contacts').upsert({user_id:m.uid,telegram:t});
-        if(r.error) dberr(r.error);
-    }
 }
 const queueTrial=()=>{
     clearTimeout(tT);
